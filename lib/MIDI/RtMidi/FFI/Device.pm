@@ -115,7 +115,7 @@ sub DESTROY {
     };
     my $fn = "rtmidi_$self->{type}_free";
     croak "Unable to free type : $self->{type}" unless $free_dispatch->{ $fn };
-    #$free_dispatch->{ $fn }->( $self->{device} );
+    $free_dispatch->{ $fn }->( $self->{device} );
 }
 
 1;
