@@ -17,7 +17,8 @@ record_layout(
 
 use FFI::Platypus;
 use FFI::CheckLib;
-use FFI::Platypus::Buffer;
+use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
+use FFI::Platypus::Memory qw/ malloc free /;
 
 my $ffi = FFI::Platypus->new;
 $ffi->lib( find_lib_or_die( lib => 'rtmidi' ) );
@@ -67,26 +68,33 @@ $ffi->attach( rtmidi_in_free => ['RtMidiInPtr'] => 'void' );
 $ffi->attach( rtmidi_in_get_current_api => ['RtMidiInPtr'] => 'int' );
 $ffi->attach( rtmidi_in_cancel_callback => ['RtMidiInPtr'] => 'void' );
 $ffi->attach( rtmidi_in_ignore_types => ['RtMidiInPtr','bool','bool','bool'] => 'void' );
-$ffi->attach( rtmidi_in_get_message => ['RtMidiInPtr','string','size_t*'] => 'double' );
 $ffi->attach( rtmidi_out_create_default => ['void'] => 'RtMidiOutPtr' );
 $ffi->attach( rtmidi_out_create => ['int', 'string'] => 'RtMidiOutPtr' );
 $ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void' );
 $ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'int' );
-$ffi->attach( rtmidi_out_send_message => ['RtMidiOutPtr','string','int'] => 'int' );
-
-sub rtmidi_out_send_message_buf {
-    my ( $dev, $str ) = @_;
-    my( $ptr, $size ) = scalar_to_buffer( $str );
-    rtmidi_out_send_message( $dev, $ptr, $size );
-}
-
-sub rtmidi_in_get_message_buf {
-    my ( $dev ) = @_;
-    my $str = ' ' x 16;
-    my( $ptr, $size ) = scalar_to_buffer( $str );
-    rtmidi_in_get_message( $dev, $ptr, \$size );
-    buffer_to_scalar $ptr, $size;
-}
+$ffi->attach(
+    rtmidi_in_get_message =>
+    ['RtMidiInPtr','string','size_t*'] =>
+    'double',
+    sub {
+        my ( $sub, $dev, $size ) = @_;
+        $size //= 1024;
+        my $str = malloc $size;
+        $sub->( $dev, $str, \$size );
+        my $msg = buffer_to_scalar( $str, $size );
+        free $str;
+        return $msg;
+    }
+);
+$ffi->attach(
+    rtmidi_out_send_message =>
+    ['RtMidiOutPtr','string','int']
+    => 'int',
+    sub {
+        my ( $sub, $dev, $str ) = @_;
+        $sub->( $dev, $str, length $str );
+    }
+);
 
 sub rtmidi_in_set_callback {
     my ( $dev, $cb, $data ) = @_;

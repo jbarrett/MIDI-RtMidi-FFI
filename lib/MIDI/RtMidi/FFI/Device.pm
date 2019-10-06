@@ -78,13 +78,13 @@ sub ignore_types {
 sub get_message {
     my ( $self ) = @_;
     croak "Unable to get_message for device type : $self->{type}" unless $self->{type} eq 'in';
-    rtmidi_in_get_message_buf( $self->{device} );
+    rtmidi_in_get_message( $self->{device}, $self->{queue_size_limit} );
 }
 
 sub send_message {
     my ( $self, $msg ) = @_;
     croak "Unable to send_message for device type : $self->{type}" unless $self->{type} eq 'out';
-    rtmidi_out_send_message_buf( $self->{device}, $msg );
+    rtmidi_out_send_message( $self->{device}, $msg );
 }
 
 sub _create_device {
