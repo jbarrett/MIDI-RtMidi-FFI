@@ -3,6 +3,7 @@ use warnings;
 package MIDI::RtMidi::FFI::Device;
 
 use MIDI::RtMidi::FFI ':all';
+use MIDI::Event;
 use Carp;
 
 sub new {
@@ -85,6 +86,11 @@ sub send_message {
     my ( $self, $msg ) = @_;
     croak "Unable to send_message for device type : $self->{type}" unless $self->{type} eq 'out';
     rtmidi_out_send_message( $self->{device}, $msg );
+}
+
+sub send_event {
+    my ( $self, @event ) = @_;
+    $self->send_message( MIDI::Event::encode( [[@event]], { never_add_eot => 1 } ) );
 }
 
 sub _create_device {
