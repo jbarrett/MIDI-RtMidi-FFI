@@ -32,6 +32,32 @@ sub open_port {
     rtmidi_open_port( $self->{device}, $port_number, $port_name );
 }
 
+sub get_ports_by_name {
+    my ( $self, $name ) = @_;
+    my @ports = grep {
+        my $pn = $self->get_port_name( $_ );
+        ref $name eq 'Regexp'
+            ? $pn =~ $name
+            : $pn eq $name
+    } 0..($self->get_port_count-1);
+    return @ports;
+}
+
+sub open_port_by_name {
+    my ( $self, $name, $portname ) = @_;
+    $portname //= $self->{type} . '-' . time();
+    if ( ref $name eq 'ARRAY' ) {
+        for ( @{ $name } ) {
+            return if $self->open_port_by_name( $_ );
+        }
+    }
+    else {
+        my @ports = $self->get_ports_by_name( $name );
+        return 0 unless @ports;
+        return !$self->open_port( $ports[0], $portname );
+    }
+}
+
 sub close_port {
     my ( $self ) = @_;
     rtmidi_close_port( $self->{device} );
