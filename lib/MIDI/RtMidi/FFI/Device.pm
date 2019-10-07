@@ -91,7 +91,7 @@ sub set_callback {
 }
 
 sub cancel_callback {
-    my ( $self, $cb, $data ) = @_;
+    my ( $self ) = @_;
     croak "Unable to cancel_callback for device type : $self->{type}" unless $self->{type} eq 'in';
     rtmidi_in_cancel_callback( $self->{device} );
 }
