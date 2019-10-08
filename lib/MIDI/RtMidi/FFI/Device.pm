@@ -116,7 +116,8 @@ sub send_message {
 
 sub send_event {
     my ( $self, @event ) = @_;
-    $self->send_message( MIDI::Event::encode( [[@event]], { never_add_eot => 1 } ) );
+    my $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
+    $self->send_message( ${ $msg } );
 }
 
 sub _create_device {
