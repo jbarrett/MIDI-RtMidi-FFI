@@ -81,7 +81,8 @@ $ffi->attach(
         $size //= 1024;
         my $str = malloc $size;
         $sub->( $dev, $str, \$size );
-        my $msg = buffer_to_scalar( $str, $size );
+        #my $msg = buffer_to_scalar( $str, $size );
+        my $msg = substr( $str, 0, $size );
         free $str;
         return $msg;
     }
