@@ -97,10 +97,13 @@ $ffi->attach(
     }
 );
 
-sub rtmidi_in_set_callback {
-    my ( $dev, $cb, $data ) = @_;
-    $ffi->function( rtmidi_in_set_callback => ['RtMidiInPtr', '(double,string,size_t,opaque)->void', 'opaque'] => 'void' )->call( $dev, $ffi->closure($cb), $data );
-}
+$ffi->type('(double,string,size_t,opaque)->void' => 'RtMidiCCallback');
+$ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','opaque'] => 'void', sub {
+    my ( $sub, $dev, $cb, $data ) = @_;
+    my $closure = $ffi->closure($cb);
+    my $opaque = $ffi->cast(RtMidiCCallback => 'opaque', $closure);
+    $sub->( $dev, $closure, $data );
+} );
 
 our @EXPORT_OK = (qw/
     RTMIDI_API_UNSPECIFIED
