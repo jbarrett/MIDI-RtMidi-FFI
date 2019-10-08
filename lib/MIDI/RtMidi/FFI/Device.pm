@@ -131,6 +131,8 @@ sub _create_device {
     my $fn = "rtmidi_$self->{type}_create";
     $fn = "${fn}_default" if !$self->{api} && !$self->{name} && !$self->{queue_size_limit};
     croak "Unknown type : $self->{type}" unless $create_dispatch->{ $fn };
+
+    $self->{queue_size_limit} //= 1024;
     $self->{device} = $create_dispatch->{ $fn }->( $self->{api}, $self->{name}, $self->{queue_size_limit} );
 }
 
