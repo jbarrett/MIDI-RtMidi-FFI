@@ -97,11 +97,15 @@ $ffi->attach(
     }
 );
 
-$ffi->type('(double,string,size_t,opaque)->void' => 'RtMidiCCallback');
-$ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','opaque'] => 'void', sub {
+$ffi->type('(double,opaque,size_t,string)->void' => 'RtMidiCCallback');
+$ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','string'] => 'void', sub {
     my ( $sub, $dev, $cb, $data ) = @_;
-    my $closure = $ffi->closure($cb);
-    my $opaque = $ffi->cast(RtMidiCCallback => 'opaque', $closure);
+    my $callback = sub {
+        my ( $timestamp, $inmsg, $size, $data ) = @_;
+        my $msg = buffer_to_scalar $inmsg, $size;
+        $cb->( $timestamp, $msg, $data );
+    };
+    my $closure = $ffi->closure($callback);
     $sub->( $dev, $closure, $data );
 } );
 
