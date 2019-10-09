@@ -107,6 +107,7 @@ $ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','string
     };
     my $closure = $ffi->closure($callback);
     $sub->( $dev, $closure, $data );
+    return $closure;
 } );
 
 our @EXPORT_OK = (qw/
