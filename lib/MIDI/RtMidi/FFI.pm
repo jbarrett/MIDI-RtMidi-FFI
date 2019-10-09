@@ -74,26 +74,26 @@ $ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void' );
 $ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'int' );
 $ffi->attach(
     rtmidi_in_get_message =>
-    ['RtMidiInPtr','string','size_t*'] =>
+    ['RtMidiInPtr','opaque','size_t*'] =>
     'double',
     sub {
         my ( $sub, $dev, $size ) = @_;
         $size //= 1024;
         my $str = malloc $size;
         $sub->( $dev, $str, \$size );
-        #my $msg = buffer_to_scalar( $str, $size );
-        my $msg = substr( $str, 0, $size );
+        my $msg = buffer_to_scalar( $str, $size );
         free $str;
         return $msg;
     }
 );
 $ffi->attach(
     rtmidi_out_send_message =>
-    ['RtMidiOutPtr','string','int']
+    ['RtMidiOutPtr','opaque','int']
     => 'int',
     sub {
         my ( $sub, $dev, $str ) = @_;
-        $sub->( $dev, $str, length $str );
+        my ( $buffer, $bufsize ) = scalar_to_buffer $str;
+        $sub->( $dev, $buffer, $bufsize );
     }
 );
 
