@@ -75,7 +75,6 @@ $ffi->attach( rtmidi_out_create_default => ['void'] => 'RtMidiOutPtr' );
 $ffi->attach( rtmidi_out_create => ['int', 'string'] => 'RtMidiOutPtr' );
 $ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void' );
 $ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'int' );
-
 $ffi->attach(
     rtmidi_in_get_message =>
     ['RtMidiInPtr',(RTMIDI_VERSION==4?'opaque':'opaque*'),'size_t*'] =>
@@ -102,18 +101,30 @@ $ffi->attach(
     }
 );
 
-$ffi->type('(double,opaque,size_t,string)->void' => 'RtMidiCCallback');
-$ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','string'] => 'void', sub {
-    my ( $sub, $dev, $cb, $data ) = @_;
-    my $callback = sub {
-        my ( $timestamp, $inmsg, $size, $data ) = @_;
-        my $msg = buffer_to_scalar $inmsg, $size;
-        $cb->( $timestamp, $msg, $data );
-    };
-    my $closure = $ffi->closure($callback);
-    $sub->( $dev, $closure, $data );
-    return $closure;
-} );
+if ( RTMIDI_VERSION == 4 ) {
+    $ffi->type('(double,opaque,size_t,string)->void' => 'RtMidiCCallback');
+    $ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','string'] => 'void', sub {
+        my ( $sub, $dev, $cb, $data ) = @_;
+        my $callback = sub {
+            my ( $timestamp, $inmsg, $size, $data ) = @_;
+            my $msg = buffer_to_scalar $inmsg, $size;
+            $cb->( $timestamp, $msg, $data );
+        };
+        my $closure = $ffi->closure($callback);
+        $sub->( $dev, $closure, $data );
+        return $closure;
+    } );
+}
+else {
+    $ffi->type('(double,string,string)->void' => 'RtMidiCCallback') if RTMIDI_VERSION == 3;
+    $ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','string'] => 'void', sub {
+            my ( $sub, $dev, $cb, $data ) = @_;
+            my $closure = $ffi->closure($cb);
+            $sub->( $dev, $closure, $data );
+            return $closure
+        }
+    );
+}
 
 our @EXPORT_OK = (qw/
     RTMIDI_API_UNSPECIFIED
