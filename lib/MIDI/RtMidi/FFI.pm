@@ -53,9 +53,12 @@ use constant RTMIDI_ERROR_SYSTEM_ERROR      => 9;
 use constant RTMIDI_ERROR_THREAD_ERROR      => 10;
 $ffi->type(enum => 'RtMidiErrorType');
 
-$ffi->attach( rtmidi_get_compiled_api => ['enum*', 'unsigned int'] => 'int' );
 $ffi->attach( rtmidi_api_display_name => ['int'] => 'string' );
 $ffi->attach( rtmidi_api_name => ['int'] => 'string' );
+
+sub RTMIDI_VERSION { defined &rtmidi_api_display_name ? 4 : 3 }
+
+$ffi->attach( rtmidi_get_compiled_api => ['enum*', 'unsigned int'] => 'int' );
 $ffi->attach( rtmidi_compiled_api_by_name => ['string'] => 'int' );
 $ffi->attach( rtmidi_open_port => ['RtMidiPtr', 'int', 'string'] => 'void' );
 $ffi->attach( rtmidi_open_virtual_port => ['RtMidiPtr', 'string'] => 'void' );
@@ -72,15 +75,17 @@ $ffi->attach( rtmidi_out_create_default => ['void'] => 'RtMidiOutPtr' );
 $ffi->attach( rtmidi_out_create => ['int', 'string'] => 'RtMidiOutPtr' );
 $ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void' );
 $ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'int' );
+
 $ffi->attach(
     rtmidi_in_get_message =>
-    ['RtMidiInPtr','opaque','size_t*'] =>
+    ['RtMidiInPtr',(RTMIDI_VERSION==4?'opaque':'opaque*'),'size_t*'] =>
     'double',
     sub {
         my ( $sub, $dev, $size ) = @_;
         $size //= 1024;
         my $str = malloc $size;
-        $sub->( $dev, $str, \$size );
+        $sub->( $dev, $str, \$size ) if RTMIDI_VERSION == 4;
+        $sub->( $dev, \$str, \$size ) if RTMIDI_VERSION == 3;
         my $msg = buffer_to_scalar( $str, $size );
         free $str;
         return $msg;
@@ -129,6 +134,7 @@ our @EXPORT_OK = (qw/
     RTMIDI_ERROR_DRIVER_ERROR
     RTMIDI_ERROR_SYSTEM_ERROR
     RTMIDI_ERROR_THREAD_ERROR
+    RTMIDI_VERSION
     rtmidi_get_compiled_api
     rtmidi_api_display_name
     rtmidi_api_name
