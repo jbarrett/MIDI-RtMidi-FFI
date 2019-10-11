@@ -121,7 +121,7 @@ else {
             my ( $sub, $dev, $cb, $data ) = @_;
             my $closure = $ffi->closure($cb);
             $sub->( $dev, $closure, $data );
-            return $closure
+            return $closure;
         }
     );
 }
