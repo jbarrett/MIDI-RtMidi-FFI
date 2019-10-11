@@ -59,7 +59,22 @@ $ffi->attach( rtmidi_api_name => ['int'] => 'string' );
 
 sub RTMIDI_VERSION { defined &rtmidi_api_display_name ? 4 : 3 }
 
-$ffi->attach( rtmidi_get_compiled_api => ['enum*', 'unsigned int'] => 'int' );
+$ffi->attach(
+    rtmidi_get_compiled_api =>
+    (RTMIDI_VERSION==4?['opaque', 'unsigned int']:['opaque*']) =>
+    'int', sub {
+        my ( $sub, $get ) = @_;
+        my $num_apis = $sub->();
+        return unless $num_apis;
+        return $num_apis unless $get;
+        my $apis = malloc RTMIDI_API_NUM * $ffi->sizeof('enum');
+        $sub->( $apis, RTMIDI_API_NUM ) if RTMIDI_VERSION==4;
+        $sub->( \$apis ) if RTMIDI_VERSION==3;
+        my $api_arr = $ffi->cast( 'opaque' => "enum[$num_apis]", $apis );
+        free $apis;
+        return $api_arr;
+    }
+);
 $ffi->attach( rtmidi_compiled_api_by_name => ['string'] => 'int' );
 $ffi->attach( rtmidi_open_port => ['RtMidiPtr', 'int', 'string'] => 'void' );
 $ffi->attach( rtmidi_open_virtual_port => ['RtMidiPtr', 'string'] => 'void' );
