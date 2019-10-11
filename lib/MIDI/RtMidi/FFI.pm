@@ -3,6 +3,8 @@ use warnings;
 package MIDI::RtMidi::FFI;
 use base qw/ Exporter /;
 
+# ABSTRACT: Binding for librtmidi - Realtime MIDI library
+
 {
 package RtMidiWrapper;
 use FFI::Platypus::Record;
@@ -22,7 +24,6 @@ use FFI::Platypus::Memory qw/ malloc free /;
 
 my $ffi = FFI::Platypus->new;
 $ffi->lib( find_lib_or_die( lib => 'rtmidi' ) );
-# rtmidi_api_name, rtmidi_api_display_name not found?
 $ffi->ignore_not_found(1);
 
 $ffi->type("record(RtMidiWrapper)" => 'RtMidiPtr');
@@ -100,7 +101,6 @@ $ffi->attach(
         $sub->( $dev, $buffer, $bufsize );
     }
 );
-
 if ( RTMIDI_VERSION == 4 ) {
     $ffi->type('(double,opaque,size_t,string)->void' => 'RtMidiCCallback');
     $ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','string'] => 'void', sub {
