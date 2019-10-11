@@ -183,8 +183,6 @@ our @EXPORT_OK = (qw/
     rtmidi_out_get_current_api
     rtmidi_out_send_message
     rtmidi_in_set_callback
-    rtmidi_out_send_message_buf
-    rtmidi_in_get_message_buf
 /);
 
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
