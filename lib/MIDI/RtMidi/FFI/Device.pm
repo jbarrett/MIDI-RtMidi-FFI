@@ -392,6 +392,18 @@ sub DESTROY {
 
 __END__
 
+=head1 TODO
+
+=head2 Deprecate the dragon
+
+The callback mechanism for handling incoming events is useful. It would be nice
+if it were more robust.
+
+=head2 Deprecate _skip_free
+
+I've found this is only required for certain builds of librtmidi v3.0.0, but
+not requiring it at all would be better.
+
 =head1 SEE ALSO
 
 L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
