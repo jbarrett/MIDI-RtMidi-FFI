@@ -61,14 +61,14 @@ sub RTMIDI_VERSION { defined &rtmidi_api_display_name ? 4 : 3 }
 
 $ffi->attach(
     rtmidi_get_compiled_api =>
-    (RTMIDI_VERSION==4?['opaque', 'unsigned int']:['opaque*']) =>
+    (RTMIDI_VERSION>3?['opaque', 'unsigned int']:['opaque*']) =>
     'int', sub {
         my ( $sub, $get ) = @_;
         my $num_apis = $sub->();
         return unless $num_apis;
         return $num_apis unless $get;
         my $apis = malloc RTMIDI_API_NUM * $ffi->sizeof('enum');
-        $sub->( $apis, RTMIDI_API_NUM ) if RTMIDI_VERSION==4;
+        $sub->( $apis, RTMIDI_API_NUM ) if RTMIDI_VERSION > 3;
         $sub->( \$apis ) if RTMIDI_VERSION==3;
         my $api_arr = $ffi->cast( 'opaque' => "enum[$num_apis]", $apis );
         free $apis;
@@ -93,13 +93,13 @@ $ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void' );
 $ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'int' );
 $ffi->attach(
     rtmidi_in_get_message =>
-    ['RtMidiInPtr',(RTMIDI_VERSION==4?'opaque':'opaque*'),'size_t*'] =>
+    ['RtMidiInPtr',(RTMIDI_VERSION>3?'opaque':'opaque*'),'size_t*'] =>
     'double',
     sub {
         my ( $sub, $dev, $size ) = @_;
         $size //= 1024;
         my $str = malloc $size;
-        $sub->( $dev, $str, \$size ) if RTMIDI_VERSION == 4;
+        $sub->( $dev, $str, \$size ) if RTMIDI_VERSION > 3;
         $sub->( $dev, \$str, \$size ) if RTMIDI_VERSION == 3;
         my $msg = buffer_to_scalar( $str, $size );
         free $str;
@@ -116,7 +116,7 @@ $ffi->attach(
         $sub->( $dev, $buffer, $bufsize );
     }
 );
-if ( RTMIDI_VERSION == 4 ) {
+if ( RTMIDI_VERSION > 3 ) {
     $ffi->type('(double,opaque,size_t,string)->void' => 'RtMidiCCallback');
     $ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','string'] => 'void', sub {
         my ( $sub, $dev, $cb, $data ) = @_;
@@ -131,7 +131,7 @@ if ( RTMIDI_VERSION == 4 ) {
     } );
 }
 else {
-    $ffi->type('(double,string,string)->void' => 'RtMidiCCallback') if RTMIDI_VERSION == 3;
+    $ffi->type('(double,string,string)->void' => 'RtMidiCCallback');
     $ffi->attach( rtmidi_in_set_callback => ['RtMidiInPtr','RtMidiCCallback','string'] => 'void', sub {
             my ( $sub, $dev, $cb, $data ) = @_;
             my $closure = $ffi->closure($cb);
