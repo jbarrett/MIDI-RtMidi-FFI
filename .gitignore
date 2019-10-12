@@ -1,4 +1,6 @@
 *.swp
+*.tmp
+*.vim
 *~
 .build/
 MIDI-RtMidi-FFI-*/
