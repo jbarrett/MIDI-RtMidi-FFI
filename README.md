@@ -1,5 +1,3 @@
-Pre-alpha, not working software.
-
 # SYNOPSIS
 
 ```perl
