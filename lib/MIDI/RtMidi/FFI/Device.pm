@@ -12,6 +12,9 @@ sub new {
         ? bless( $args[0], $class )
         : bless( { @args }, $class );
     $self->{type} //= 'out';
+    $self->{ignore_sysex} //= 1;
+    $self->{ignore_timing} //= 1;
+    $self->{ignore_sensing} //= 1;
     croak "Unknown type : $self->{type}" unless $self->{type} eq 'in' || $self->{type} eq 'out';
     $self->_create_device;
     return $self;
@@ -134,6 +137,11 @@ sub _create_device {
 
     $self->{queue_size_limit} //= 1024;
     $self->{device} = $create_dispatch->{ $fn }->( $self->{api}, $self->{name}, $self->{queue_size_limit} );
+    $self->{type} eq 'in' && $self->ignore_types(
+        $self->{ignore_sysex},
+        $self->{ignore_timing},
+        $self->{ignore_sensing},
+    );
 }
 
 sub DESTROY {
