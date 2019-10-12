@@ -32,6 +32,7 @@ sub open_virtual_port {
 
 sub open_port {
     my ( $self, $port_number, $port_name ) = @_;
+    $self->{port_name} = $port_name;
     rtmidi_open_port( $self->{device}, $port_number, $port_name );
 }
 
@@ -122,6 +123,9 @@ sub send_event {
     my $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
     $self->send_message( ${ $msg } );
 }
+
+sub port_name { $_[0]->{port_name}; }
+sub name { $_[0]->{name}; }
 
 sub _create_device {
     my ( $self ) = @_;
