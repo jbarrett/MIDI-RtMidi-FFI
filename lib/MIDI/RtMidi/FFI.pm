@@ -186,3 +186,176 @@ our @EXPORT_OK = (qw/
 /);
 
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+MIDI::RtMidi::FFI - Perl bindings for RtMidi.
+
+=head1 VERSION
+
+version 0.01
+
+=head1 SYNOPSIS
+
+    use MIDI::RtMidi::FFI ':all';
+    use MIDI::Event;
+    
+    my $device = rtmidi_out_create( RTMIDI_API_UNIX_JACK, 'perl-jack' );
+    my $port_count = rtmidi_get_port_count( $device );
+    my $synth_port = grep {
+        rtmidi_get_port_name( $device, $_ ) =~ /synth/i
+    } 0..($port_count-1);
+    
+    rtmidi_open_port( $device, $synth_port, 'my synth' );
+    rtmidi_out_send_message(
+        $device,
+        ${ MIDI::Event::encode([[ note_on => 0, 0, 0x40, 0x5a ]], { never_add_eot => 1 }) }
+    );
+
+=head1 DESCRIPTION
+
+MIDI::RtMidi::FFI provides an almost direct binding to the RtMidi realtime MIDI
+library. This should work with v3.0.0, v4.0.0 and possibly later versions of
+librtmidi.
+
+Check out L<MIDI::RtMidi::FFI::Device> for an OO interface to this module.
+
+=head1 ENUMS
+
+=head2 RtMidiApi
+
+RTMIDI_API_UNSPECIFIED, RTMIDI_API_MACOSX_CORE, RTMIDI_API_LINUX_ALSA,
+RTMIDI_API_UNIX_JACK, RTMIDI_API_WINDOWS_MM, RTMIDI_API_RTMIDI_DUMMY,
+RTMIDI_API_NUM
+
+=head2 RtMidiErrorType
+
+RTMIDI_ERROR_WARNING, RTMIDI_ERROR_DEBUG_WARNING, RTMIDI_ERROR_UNSPECIFIED,
+RTMIDI_ERROR_NO_DEVICES_FOUND, RTMIDI_ERROR_INVALID_DEVICE,
+RTMIDI_ERROR_MEMORY_ERROR, RTMIDI_ERROR_INVALID_PARAMETER,
+RTMIDI_ERROR_INVALID_USE, RTMIDI_ERROR_DRIVER_ERROR, RTMIDI_ERROR_SYSTEM_ERROR,
+RTMIDI_ERROR_THREAD_ERROR
+
+=head1 FUNCTIONS
+
+=head2 rtmidi_get_compiled_api()
+
+Returns an array ref of available APIs as RTMIDI_API constants.
+
+=head2 rtmidi_api_display_name( $api );
+
+From v4.0.0. Returns the associated display name for a RTMIDI_API constant.
+
+=head2 rtmidi_api_name( $api );
+
+From v4.0.0. Returns the associated name for a given RTMIDI_API constant.
+
+=head2 rtmidi_compiled_api_by_name( $name );
+
+From v4.0.0. Returns the associated RTMIDI_API constant for a given name.
+
+=head2 rtmidi_open_port( $device, $port, $name );
+
+Open a MIDI port.
+
+=head2 rtmidi_open_virtual_port( $device, $name );
+
+Creates a virtual MIDI port to which other software applications can connect.
+
+=head2 rtmidi_close_port( $device )
+
+Close a MIDI connection.
+
+=head2 rtmidi_get_port_count( $device )
+
+Return the number of available MIDI ports.
+
+=head2 rtmidi_get_port_name( $device, $port )
+
+Return the name for the specified MIDI input port number.
+
+=head2 rtmidi_in_create_default()
+
+Create a default MIDI in device with no initial values.
+
+=head2 rtmidi_in_create( $api, $name, $queuesize )
+
+Create a MIDI in device with initial values.
+
+=head2 rtmidi_in_free( $device )
+
+Free the given MIDI in device.
+
+=head2 rtmidi_in_get_current_api( $device )
+
+Return the RTMIDI_API constant for the given device.
+
+=head2 rtmidi_in_set_callback( $device, $coderef, $data )
+
+Set a callback function to be invoked for incoming MIDI messages.
+
+Your callback receives the timestamp of the event, the message and the data you
+set while defining the callback. Due to the way params are packed, this data
+can only be a simple scalar, not a reference.
+
+B<NB> This is not recommended in the current implementation. If a message
+arrives while the callback is already running, your program will segfault!
+
+=head2 rtmidi_in_cancel_callback( $device )
+
+Cancel use of the current callback function (if one exists).
+
+=head2 rtmidi_in_ignore_types( $device, $ignore_sysex, $ignore_timing, $ignore_sensing )
+
+Specify whether certain MIDI message types should be queued or ignored during input.
+
+=head2 rtmidi_out_create_default()
+
+Create a default MIDI out device with no initial values.
+
+=head2 rtmidi_out_create( $api, $name )
+
+Create a MIDI out device with initial values.
+
+=head2 rtmidi_out_free( $device )
+
+Free the given MIDI out device.
+
+=head2 rtmidi_out_get_current_api( $device )
+
+Return the RTMIDI_API constant for the given device.
+
+=head2 rtmidi_out_send_message( $device, $message )
+
+Send a single message out an open MIDI output port.
+
+=head1 AUTHOR
+
+John Barrett, <john@jbrt.org>
+
+=head1 CONTRIBUTING
+
+L<https://github.com/jbarrett/MIDI-RtMidi-FFI>
+
+All comments and contributions welcome.
+
+=head1 BUGS AND SUPPORT
+
+Please direct all requests to L<https://github.com/jbarrett/MIDI-RtMidi-FFI/issues>
+
+=head1 COPYRIGHT
+
+Copyright 2019 John Barrett.
+
+=head1 LICENSE
+
+This application is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
