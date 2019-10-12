@@ -6,6 +6,8 @@ use MIDI::RtMidi::FFI ':all';
 use MIDI::Event;
 use Carp;
 
+our $VERSION = $MIDI::RtMidi::FFI::VERSION;
+
 sub new {
     my ( $class, @args ) = @_;
     my $self = ( @args == 1 and ref $args[0] eq 'HASH' )

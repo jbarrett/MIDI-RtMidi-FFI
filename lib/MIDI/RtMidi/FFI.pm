@@ -3,6 +3,8 @@ use warnings;
 package MIDI::RtMidi::FFI;
 use base qw/ Exporter /;
 
+our $VERSION = '0.01';
+
 # ABSTRACT: Binding for librtmidi - Realtime MIDI library
 
 {
