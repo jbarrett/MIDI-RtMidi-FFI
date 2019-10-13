@@ -157,7 +157,12 @@ $ffi->attach( rtmidi_in_cancel_callback => ['RtMidiInPtr'] => 'void' );
 $ffi->attach( rtmidi_in_ignore_types => ['RtMidiInPtr','bool','bool','bool'] => 'void' );
 $ffi->attach( rtmidi_out_create_default => ['void'] => 'RtMidiOutPtr' );
 $ffi->attach( rtmidi_out_create => ['int', 'string'] => 'RtMidiOutPtr' );
-$ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void' );
+$ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void', sub {
+        my ( $sub, $dev ) = @_;
+        rtmidi_close_port( $dev );
+        $sub->( $dev );
+    }
+);
 $ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'int' );
 $ffi->attach(
     rtmidi_in_get_message =>
