@@ -146,7 +146,7 @@ $ffi->attach(
 $ffi->attach( rtmidi_compiled_api_by_name => ['string'] => 'int' );
 $ffi->attach( rtmidi_open_port => ['RtMidiPtr', 'int', 'string'] => 'void' );
 $ffi->attach( rtmidi_open_virtual_port => ['RtMidiPtr', 'string'] => 'void' );
-$ffi->attach( rtmidi_close_port => ['int'] => 'void' );
+$ffi->attach( rtmidi_close_port => ['RtMidiPtr'] => 'void' );
 $ffi->attach( rtmidi_get_port_count => ['RtMidiPtr'] => 'int' );
 $ffi->attach( rtmidi_get_port_name => ['RtMidiPtr', 'int'] => 'string' );
 $ffi->attach( rtmidi_in_create_default => ['void'] => 'RtMidiInPtr' );
