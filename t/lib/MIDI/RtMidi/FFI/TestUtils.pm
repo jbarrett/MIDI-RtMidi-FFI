@@ -20,7 +20,6 @@ sub newdevice {
         ignore_sysex => 0,
         ignore_timing => 0,
         ignore_sensing => 0,
-        _skip_free => 1
     );
 }
 
