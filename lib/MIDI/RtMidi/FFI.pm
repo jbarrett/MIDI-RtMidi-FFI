@@ -151,18 +151,13 @@ $ffi->attach( rtmidi_get_port_count => ['RtMidiPtr'] => 'int' );
 $ffi->attach( rtmidi_get_port_name => ['RtMidiPtr', 'int'] => 'string' );
 $ffi->attach( rtmidi_in_create_default => ['void'] => 'RtMidiInPtr' );
 $ffi->attach( rtmidi_in_create => ['int', 'string', 'unsigned int'] => 'RtMidiInPtr' );
-$ffi->attach( rtmidi_in_free => ['RtMidiInPtr'] => 'void' );
+$ffi->attach( rtmidi_in_free => ['RtMidiInPtr'] => 'void', \&_free_wrapper );
 $ffi->attach( rtmidi_in_get_current_api => ['RtMidiInPtr'] => 'int' );
 $ffi->attach( rtmidi_in_cancel_callback => ['RtMidiInPtr'] => 'void' );
 $ffi->attach( rtmidi_in_ignore_types => ['RtMidiInPtr','bool','bool','bool'] => 'void' );
 $ffi->attach( rtmidi_out_create_default => ['void'] => 'RtMidiOutPtr' );
 $ffi->attach( rtmidi_out_create => ['int', 'string'] => 'RtMidiOutPtr' );
-$ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void', sub {
-        my ( $sub, $dev ) = @_;
-        rtmidi_close_port( $dev );
-        $sub->( $dev );
-    }
-);
+$ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void', \&_free_wrapper );
 $ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'int' );
 $ffi->attach(
     rtmidi_in_get_message =>
@@ -212,6 +207,12 @@ else {
             return $closure;
         }
     );
+}
+
+sub _free_wrapper {
+    my ( $sub, $dev ) = @_;
+    rtmidi_close_port( $dev );
+    $sub->( $dev );
 }
 
 our @EXPORT_OK = (qw/
