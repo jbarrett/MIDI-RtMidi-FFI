@@ -37,6 +37,15 @@ use Carp;
 
 our $VERSION = $MIDI::RtMidi::FFI::VERSION;
 
+my $rtmidi_api_names = {
+    unspecified => [ "Unknown",            RTMIDI_API_UNSPECIFIED ],
+    core        => [ "CoreMidi",           RTMIDI_API_MACOSX_CORE ],
+    alsa        => [ "ALSA",               RTMIDI_API_LINUX_ALSA ],
+    jack        => [ "Jack",               RTMIDI_API_UNIX_JACK ],
+    winmm       => [ "Windows MultiMedia", RTMIDI_API_WINDOWS_MM ],
+    dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ]
+};
+
 =head1 METHODS
 
 =head2 new
@@ -51,6 +60,20 @@ Returns a new MIDI::RtMidi::FFI::Device object. Valid attributes:
 
 B<type> -
 Device type : 'in' or 'out' (defaults to 'out')
+
+=item *
+
+B<api> -
+MIDI API to use. This should be a L<RtMidiApi constant|MIDI::RtMidi::FFI/"RtMidiApi">.
+By default the device should use the first compiled API available. See search
+order notes in
+L< Using Simultaneous Multiple APIs|https://www.music.mcgill.ca/~gary/rtmidi/index.html#multi>
+on the RtMidi website.
+
+=item *
+
+B<api_name> -
+MIDI API to use by name. One of 'alsa', 'jack', 'core', 'winmm' or 'dummy'.
 
 =item *
 
@@ -369,6 +392,8 @@ sub _create_device {
     croak "Unknown type : $self->{type}" unless $create_dispatch->{ $fn };
 
     $self->{queue_size_limit} //= $self->{bufsize} //= 1024;
+    my $api_by_name = $rtmidi_api_names->{ $self->{api_str} } if $self->{api_str};
+    $self->{api} //= $api_by_name->[1] if $api_by_name;
     $self->{device} = $create_dispatch->{ $fn }->( $self->{api}, $self->{name}, $self->{queue_size_limit} );
     $self->{type} eq 'in' && $self->ignore_types(
         $self->{ignore_sysex},
