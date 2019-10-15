@@ -45,6 +45,8 @@ L<RtMidi's C Interface|https://www.music.mcgill.ca/~gary/rtmidi/group__C-interfa
 MIDI::RtMidi::FFI should work with v3.0.0, v4.0.0 and possibly later versions
 of librtmidi.
 
+This is beta software. Expect crashes, memory issues and possible API changes.
+
 Check out L<MIDI::RtMidi::FFI::Device> for an OO interface to this module.
 
 =cut
