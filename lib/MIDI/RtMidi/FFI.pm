@@ -68,7 +68,7 @@ use FFI::CheckLib;
 use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
 use FFI::Platypus::Memory qw/ malloc free /;
 
-my $ffi = FFI::Platypus->new;
+my $ffi = FFI::Platypus->new( api => 1 );
 $ffi->lib( find_lib_or_die( lib => 'rtmidi' ) );
 $ffi->ignore_not_found(1);
 
@@ -124,8 +124,8 @@ $ffi->type(enum => 'RtMidiErrorType');
 
 =cut
 
-$ffi->attach( rtmidi_api_display_name => ['int'] => 'string' );
-$ffi->attach( rtmidi_api_name => ['int'] => 'string' );
+$ffi->attach( rtmidi_api_display_name => ['enum'] => 'string' );
+$ffi->attach( rtmidi_api_name => ['enum'] => 'string' );
 
 sub RTMIDI_VERSION { defined &rtmidi_api_display_name ? 4 : 3 }
 
@@ -145,22 +145,22 @@ $ffi->attach(
         return $api_arr;
     }
 );
-$ffi->attach( rtmidi_compiled_api_by_name => ['string'] => 'int' );
+$ffi->attach( rtmidi_compiled_api_by_name => ['string'] => 'enum' );
 $ffi->attach( rtmidi_open_port => ['RtMidiPtr', 'int', 'string'] => 'void' );
 $ffi->attach( rtmidi_open_virtual_port => ['RtMidiPtr', 'string'] => 'void' );
 $ffi->attach( rtmidi_close_port => ['RtMidiPtr'] => 'void' );
 $ffi->attach( rtmidi_get_port_count => ['RtMidiPtr'] => 'int' );
 $ffi->attach( rtmidi_get_port_name => ['RtMidiPtr', 'int'] => 'string' );
-$ffi->attach( rtmidi_in_create_default => ['void'] => 'RtMidiInPtr' );
-$ffi->attach( rtmidi_in_create => ['int', 'string', 'unsigned int'] => 'RtMidiInPtr' );
+$ffi->attach( rtmidi_in_create_default => ['void'] => 'RtMidiInPtr*' );
+$ffi->attach( rtmidi_in_create => ['enum', 'string', 'unsigned int'] => 'RtMidiInPtr*' );
 $ffi->attach( rtmidi_in_free => ['RtMidiInPtr'] => 'void', \&_free_wrapper );
-$ffi->attach( rtmidi_in_get_current_api => ['RtMidiInPtr'] => 'int' );
+$ffi->attach( rtmidi_in_get_current_api => ['RtMidiInPtr'] => 'enum' );
 $ffi->attach( rtmidi_in_cancel_callback => ['RtMidiInPtr'] => 'void' );
 $ffi->attach( rtmidi_in_ignore_types => ['RtMidiInPtr','bool','bool','bool'] => 'void' );
-$ffi->attach( rtmidi_out_create_default => ['void'] => 'RtMidiOutPtr' );
-$ffi->attach( rtmidi_out_create => ['int', 'string'] => 'RtMidiOutPtr' );
+$ffi->attach( rtmidi_out_create_default => ['void'] => 'RtMidiOutPtr*' );
+$ffi->attach( rtmidi_out_create => ['enum', 'string'] => 'RtMidiOutPtr*' );
 $ffi->attach( rtmidi_out_free => ['RtMidiOutPtr'] => 'void', \&_free_wrapper );
-$ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'int' );
+$ffi->attach( rtmidi_out_get_current_api => ['RtMidiOutPtr'] => 'enum' );
 $ffi->attach(
     rtmidi_in_get_message =>
     ['RtMidiInPtr',(RTMIDI_VERSION>3?'opaque':'opaque*'),'size_t*'] =>
