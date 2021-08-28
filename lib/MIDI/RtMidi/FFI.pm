@@ -141,8 +141,7 @@ sub _out_send_message {
 sub _in_set_callback {
     my ( $sub, $dev, $cb, $data ) = @_;
     my $callback = sub {
-        my ( $timestamp, $inmsg, $size, $data ) = @_;
-        use DDP; p $dev->data;
+        my ( $timestamp, $inmsg, $size ) = @_;
         $cb->( $timestamp, $inmsg, $data );
     };
     my $closure = $ffi->closure($callback);
