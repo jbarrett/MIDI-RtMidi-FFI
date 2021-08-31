@@ -108,10 +108,6 @@ B<ignore_sensing> -
 
 =item *
 
-B<_skip_free> -
-A hack to prevent memory errors when a device is being cleaned up.
-Skips C<free()> (defaults to false)
-
 =back
 
 =cut
@@ -402,16 +398,17 @@ sub _create_device {
     );
 }
 
+my $free_dispatch = {
+    in  => \&rtmidi_in_free,
+    out => \&rtmidi_out_free
+};
 sub DESTROY {
     my ( $self ) = @_;
-    my $free_dispatch = {
-        rtmidi_in_free => \&rtmidi_in_free,
-        rtmidi_out_free => \&rtmidi_out_free
-    };
-    my $fn = "rtmidi_$self->{type}_free";
-    croak "Unable to free type : $self->{type}" unless $free_dispatch->{ $fn };
+    my $fn = $free_dispatch->{ $self->{type} };
+    croak "Unable to free type : $self->{type}" unless $fn;
+    $self->close_port;
     delete $self->{callback};
-    $free_dispatch->{ $fn }->( $self->{device} ) unless $self->{_skip_free};
+    $fn->( delete $self->{device} );
 }
 
 1;
@@ -424,11 +421,6 @@ __END__
 
 The callback mechanism for handling incoming events is useful. It would be nice
 if it were more robust.
-
-=head2 Deprecate _skip_free
-
-I've found this is only required for certain builds of librtmidi v3.0.0, but
-not requiring it at all would be better.
 
 =head1 SEE ALSO
 
