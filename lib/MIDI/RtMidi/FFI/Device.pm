@@ -380,7 +380,7 @@ sub send_event {
     splice @event, 1, 0, 0;                     # dtime
     splice @event, 1, 0, 0 if $is_music_event;  # channel
     my $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
-    $$msg = substr($$msg,-3,3) if $is_music_event;
+    substr( $$msg, 0, 1 ) = ''; # snip dtime
     $self->send_message( $$msg );
 }
 
