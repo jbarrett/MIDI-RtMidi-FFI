@@ -390,6 +390,7 @@ sub _create_device {
     $self->{queue_size_limit} //= $self->{bufsize} //= 1024;
     my $api_by_name = $rtmidi_api_names->{ $self->{api_str} } if $self->{api_str};
     $self->{api} //= $api_by_name->[1] if $api_by_name;
+    $self->{api} //= $rtmidi_api_names->{ unspecified }->[1];
     $self->{device} = $create_dispatch->{ $fn }->( $self->{api}, $self->{name}, $self->{queue_size_limit} );
     $self->{type} eq 'in' && $self->ignore_types(
         $self->{ignore_sysex},
