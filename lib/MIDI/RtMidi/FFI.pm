@@ -145,7 +145,7 @@ sub _in_set_callback {
         $cb->( $timestamp, $inmsg, $data );
     };
     my $closure = $ffi->closure($callback);
-    $sub->( $dev, $closure, $data );
+    $sub->( $dev, $closure );
     return $closure;
 }
 
