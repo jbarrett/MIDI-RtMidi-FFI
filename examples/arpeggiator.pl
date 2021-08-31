@@ -10,7 +10,7 @@ use MIDI::RtMidi::FFI::Device;
 my $loop = IO::Async::Loop->new;
 
 my $out = MIDI::RtMidi::FFI::Device->new( name => 'otr arp' );
-$out->open_port_by_name( qr/(?:vcv|sunvox|alsamodular)/i ); # <- your softsynth name here
+$out->open_port_by_name( qr/(?:vcv|sunvox|alsamodular|loopmidi)/i ); # <- your softsynth name here
 
 # E2-G2-A2-G2-D3-C3-D3-E3
 my @sequence = ( 40, 43, 45, 43, 50, 48, 50, 52 );
