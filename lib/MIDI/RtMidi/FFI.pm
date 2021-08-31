@@ -7,6 +7,8 @@ our $VERSION = '0.01';
 
 # ABSTRACT: Bindings for librtmidi - Realtime MIDI library
 
+our $SKIP_FREE = 1;
+
 my $enum_RtMidiApi;
 my $enum_RtMidiErrorType;
 my %binds;
@@ -47,13 +49,13 @@ BEGIN {
         rtmidi_get_port_name        => [ ['RtMidiPtr*', 'int'] => 'string' ],
         rtmidi_in_create_default    => [ ['void'] => 'RtMidiInPtr*' ],
         rtmidi_in_create            => [ ['enum', 'string', 'unsigned int'] => 'RtMidiInPtr*' ],
-        rtmidi_in_free              => [ ['RtMidiInPtr*'] => 'void' ], #, \&_free_wrapper ],
+        rtmidi_in_free              => [ ['RtMidiInPtr*'] => 'void', \&_free_wrapper ],
         rtmidi_in_get_current_api   => [ ['RtMidiInPtr*'] => 'enum' ],
         rtmidi_in_cancel_callback   => [ ['RtMidiInPtr*'] => 'void' ],
         rtmidi_in_ignore_types      => [ ['RtMidiInPtr*','bool','bool','bool'] => 'void' ],
         rtmidi_out_create_default   => [ ['void'] => 'RtMidiOutPtr*' ],
         rtmidi_out_create           => [ ['enum', 'string'] => 'RtMidiOutPtr*' ],
-        rtmidi_out_free             => [ ['RtMidiOutPtr*'] => 'void' ], # \&_free_wrapper ],
+        rtmidi_out_free             => [ ['RtMidiOutPtr*'] => 'void', \&_free_wrapper ],
         rtmidi_out_get_current_api  => [ ['RtMidiOutPtr*'] => 'enum' ],
         rtmidi_in_get_message       => [ ['RtMidiInPtr*', 'opaque', 'size_t*'] => 'double', \&_in_get_message ],
         rtmidi_out_send_message     => [ ['RtMidiOutPtr*', 'opaque', 'int' ] => 'int', \&_out_send_message ],
@@ -119,7 +121,7 @@ sub _get_compiled_api {
 sub _free_wrapper {
     my ( $sub, $dev ) = @_;
     rtmidi_close_port( $dev );
-    $sub->( $dev );
+    $sub->( $dev ) unless $SKIP_FREE;
 }
 
 sub _in_get_message {
@@ -289,6 +291,8 @@ Create a MIDI in device with initial values.
 
 Free the given MIDI in device.
 
+This currently skips delegating device deletion to librtmidi -- it just closes the port.
+
 =head2 rtmidi_in_get_current_api
 
     rtmidi_in_get_current_api( $device );
@@ -337,6 +341,8 @@ Create a MIDI out device with initial values.
     rtmidi_out_free( $device );
 
 Free the given MIDI out device.
+
+This currently skips delegating device deletion to librtmidi -- it just closes the port.
 
 =head2 rtmidi_out_get_current_api
 
