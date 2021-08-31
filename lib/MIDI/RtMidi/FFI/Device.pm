@@ -370,8 +370,8 @@ NOTE: The dtime and channel values should be omitted from the message.
 
 my $music_events = +{ map { $_ => 1 } qw/
     note_off note_on key_after_touch
-    control_change patch_change channel_after_touch
-    pitch_wheel_change
+    control_change patch_change
+    channel_after_touch pitch_wheel_change
 / };
 
 sub send_event {
