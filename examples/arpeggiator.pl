@@ -20,12 +20,12 @@ $loop->add( IO::Async::Timer::Periodic->new(
     interval => $length,
     reschedule => 'hard',
     on_tick => sub {
-        $out->send_event(note_on => 0, 0, $sequence[0], 225);
-        $out->send_event(note_off => 0, 0, $sequence[-1], 225);
+        $out->send_event(note_on => $sequence[0], 0x7F);
+        $out->send_event(note_off => $sequence[-1], 0x7F);
         push @sequence, shift @sequence;
     },
 )->start );
 
-$SIG{'INT'} = $SIG{'TERM'} = sub { $out->send_event(note_off => 0, 0, $_, 225) for @sequence; exit 0; };
+$SIG{'INT'} = $SIG{'TERM'} = sub { $out->send_event(note_off => $_, 0x7F) for @sequence; exit 0; };
 
 $loop->run;

@@ -20,9 +20,9 @@ version 0.01
     
     my $device = MIDI::RtMidi::FFI::Device->new;
     $device->open_virtual_port( 'perl-rtmidi' );
-    $device->send_event( note_on => 0, 0, 0x40, 0x5a );
+    $device->send_event( note_on => 0x40, 0x5a );
     sleep 1;
-    $device->send_event( note_off => 0, 0, 0x40, 0x5a );
+    $device->send_event( note_off => 0x40, 0x5a );
 
 =head1 DESCRIPTION
 
@@ -360,16 +360,28 @@ sub send_message {
 =head2 send_event
 
     $device->send_event( @event );
-    $device->send_event( note_on => 0, 0, 0x40, 0x5a );
+    $device->send_event( note_on => 0x40, 0x5a );
 
 Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 
+NOTE: The dtime and channel values should be omitted from the message.
+
 =cut
+
+my $music_events = +{ map { $_ => 1 } qw/
+    note_off note_on key_after_touch
+    control_change patch_change channel_after_touch
+    pitch_wheel_change
+/ };
 
 sub send_event {
     my ( $self, @event ) = @_;
+    my $is_music_event = $music_events->{ $event[0] };
+    splice @event, 1, 0, 0;                     # dtime
+    splice @event, 1, 0, 0 if $is_music_event;  # channel
     my $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
-    $self->send_message( ${ $msg } );
+    $$msg = substr($$msg,-3,3) if $is_music_event;
+    $self->send_message( $$msg );
 }
 
 sub port_name { $_[0]->{port_name}; }
