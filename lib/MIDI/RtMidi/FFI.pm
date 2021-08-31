@@ -66,8 +66,8 @@ use FFI::Platypus;
 use FFI::CheckLib;
 use FFI::Platypus::Memory qw/ malloc free /;
 use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
-my $ffi = FFI::Platypus->new( api => 1 );
-$ffi->find_lib( lib => 'rtmidi' );
+use Alien::RtMidi;
+my $ffi = FFI::Platypus->new( api => 1, lib => [ Alien::RtMidi->dynamic_libs ] );
 
 {
     package RtMidiWrapper;
