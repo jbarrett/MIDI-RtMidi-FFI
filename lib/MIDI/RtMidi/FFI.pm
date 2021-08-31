@@ -194,7 +194,7 @@ L<RtMidi's C Interface|https://www.music.mcgill.ca/~gary/rtmidi/group__C-interfa
 MIDI::RtMidi::FFI requires librtmidi v4.0.0, though will possibly work with
 later versions.
 
-This is beta software. Expect crashes, memory issues and possible API changes.
+This is ̸b̸e̸t̸a̸  alpha software. Expect crashes, memory issues and possible API changes.
 
 Check out L<MIDI::RtMidi::FFI::Device> for an OO interface to this module.
 
