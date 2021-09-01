@@ -3,7 +3,7 @@ use warnings;
 package MIDI::RtMidi::FFI;
 use base qw/ Exporter /;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # ABSTRACT: Bindings for librtmidi - Realtime MIDI library
 
@@ -163,7 +163,7 @@ MIDI::RtMidi::FFI - Perl bindings for RtMidi.
 
 =head1 VERSION
 
-version 0.01
+version 0.02
 
 =head1 SYNOPSIS
 
