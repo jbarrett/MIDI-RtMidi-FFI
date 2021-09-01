@@ -87,7 +87,7 @@ $ffi->type('record(RtMidiWrapper)' => 'RtMidiOutPtr');
 $ffi->type('(double,string,size_t,opaque)->void' => 'RtMidiCCallback');
 
 for my $fn ( keys %binds ) {
-    my @sig = $binds{ $fn }->@*;
+    my @sig = @{ $binds{ $fn } };
     $ffi->attach( $fn => @sig );
 }
 
@@ -96,7 +96,7 @@ $ffi->type(enum => 'RtMidiApi');
 
 sub _sorted_enum_keys {
     my ( $enum ) = @_;
-    sort { $enum->{ $a } <=> $enum->{ $b } } keys $enum->%*;
+    sort { $enum->{ $a } <=> $enum->{ $b } } keys %{ $enum };
 }
 
 sub _exports {
