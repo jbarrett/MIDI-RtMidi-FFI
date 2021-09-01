@@ -64,7 +64,7 @@ BEGIN {
 
 }
 
-use FFI::Platypus;
+use FFI::Platypus 1.00;
 use FFI::Platypus::Memory qw/ malloc free /;
 use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
 use Alien::RtMidi;
