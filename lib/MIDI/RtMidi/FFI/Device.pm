@@ -362,10 +362,14 @@ sub get_event {
     my $msg = $self->get_message;
     return unless $msg;
     $msg = "0$msg"; # restore dtime
-    my @event = @{ MIDI::Event::decode( \$msg )->[0] };
+    my $decoded = MIDI::Event::decode( \$msg )->[0];
+    return unless ref $decoded eq 'ARRAY';
+
+    my @event = @{ $decoded };
     my $is_music_event = $music_events->{ $event[0] };
     splice( @event, 1, 1 );                    # dtime
     splice( @event, 1, 1 ) if $is_music_event; # channel
+
     $event[0] = 'note_off' if ( $event[0] eq 'note_on' && $event[-1] == 0 );
     return wantarray
         ?  @event
