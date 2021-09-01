@@ -46,6 +46,12 @@ my $rtmidi_api_names = {
     dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ]
 };
 
+my $music_events = +{ map { $_ => 1 } qw/
+    note_off note_on key_after_touch
+    control_change patch_change
+    channel_after_touch pitch_wheel_change
+/ };
+
 =head1 METHODS
 
 =head2 new
@@ -356,7 +362,14 @@ sub get_event {
     my $msg = $self->get_message;
     return unless $msg;
     $msg = "0$msg"; # restore dtime
-    MIDI::Event::decode( \$msg );
+    my @event = @{ MIDI::Event::decode( \$msg )->[0] };
+    my $is_music_event = $music_events->{ $event[0] };
+    splice( @event, 1, 1 );                    # dtime
+    splice( @event, 1, 1 ) if $is_music_event; # channel
+    $event[0] = 'note_off' if ( $event[0] eq 'note_on' && $event[-1] == 0 );
+    return wantarray
+        ?  @event
+        : \@event;
 }
 
 =head2 send_message
@@ -383,12 +396,6 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 NOTE: The dtime and channel values should be omitted from the message.
 
 =cut
-
-my $music_events = +{ map { $_ => 1 } qw/
-    note_off note_on key_after_touch
-    control_change patch_change
-    channel_after_touch pitch_wheel_change
-/ };
 
 sub send_event {
     my ( $self, @event ) = @_;
