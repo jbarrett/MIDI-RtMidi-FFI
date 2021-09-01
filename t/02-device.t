@@ -17,9 +17,9 @@ subtest event => sub {
     connect_devices( $in, $out );
 
     my @msgs = ( "\x90\x40\x5A", "\x80\x40\x5A" );
-    $out->send_event(note_on => 0, 0, 0x40, 0x5a);
+    $out->send_event(note_on => 0x40, 0x5a);
     usleep( 10_000 );
-    $out->send_event(note_off => 0, 0, 0x40, 0x5a);
+    $out->send_event(note_off => 0x40, 0x5a);
     my @msgsin = drain_msgs( $in, scalar @msgs );
 
     is_deeply( msgs2hex( @msgs ), msgs2hex( @msgsin ), 'get message order' );

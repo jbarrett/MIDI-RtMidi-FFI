@@ -9,7 +9,7 @@ my $out = MIDI::RtMidi::FFI::Device->new( name => 'out' );
 $out->open_virtual_port( 'foo' );
 $in->open_port_by_name( qr/foo/i );
 
-$out->send_event(note_on => 0, 0, 50, 64);
+$out->send_event(note_on => 50, 64);
 my $msg = $in->get_message;
 ```
 
@@ -40,7 +40,7 @@ $in->set_callback(
 
 $out->send_message( "\x90\x40\x5A" );
 usleep 1000; # small (or no) gaps between messages cause odd issues.
-$out->send_event(note_off => 0, 0, 0x40, 0x5a);
+$out->send_event(note_off => 0x40, 0x5a);
 
 usleep 10000; # allow callbacks to finish
 ```
