@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More;
+use Test2::V0;
 use Time::HiRes qw/ usleep /;
 
 use FindBin;
@@ -22,7 +22,7 @@ subtest event => sub {
     $out->send_event(note_off => 0x40, 0x5a);
     my @msgsin = drain_msgs( $in, scalar @msgs );
 
-    is_deeply( msgs2hex( @msgs ), msgs2hex( @msgsin ), 'get message order' );
+    is( msgs2hex( @msgs ), msgs2hex( @msgsin ), 'get message order' );
 };
 
 done_testing;
