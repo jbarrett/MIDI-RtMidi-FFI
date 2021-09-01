@@ -46,6 +46,12 @@ my $rtmidi_api_names = {
     dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ]
 };
 
+my $music_events = +{ map { $_ => 1 } qw/
+    note_off note_on key_after_touch
+    control_change patch_change
+    channel_after_touch pitch_wheel_change
+/ };
+
 =head1 METHODS
 
 =head2 new
@@ -67,7 +73,7 @@ B<api> -
 MIDI API to use. This should be a L<RtMidiApi constant|MIDI::RtMidi::FFI/"RtMidiApi">.
 By default the device should use the first compiled API available. See search
 order notes in
-L< Using Simultaneous Multiple APIs|https://www.music.mcgill.ca/~gary/rtmidi/index.html#multi>
+L<Using Simultaneous Multiple APIs|https://www.music.mcgill.ca/~gary/rtmidi/index.html#multi>
 on the RtMidi website.
 
 =item *
@@ -343,6 +349,36 @@ sub get_message {
     rtmidi_in_get_message( $self->{device}, $self->{queue_size_limit} );
 }
 
+=head2 get_event
+
+    $device->get_event();
+
+Type 'in' only. Gets the next message from the queue, if available, as a decoded L<MIDI::Event>.
+
+=cut
+
+sub get_event {
+    my ( $self ) = @_;
+    my $msg = $self->get_message;
+    return unless $msg;
+    $msg = "0$msg"; # restore dtime
+    my $decoded = MIDI::Event::decode( \$msg )->[0];
+    if ( ref $decoded ne 'ARRAY' ) {
+        my $hmsg = join '', map { sprintf "%02x", ord $_ } split '', $msg;
+        warn "Could not decode message $hmsg";
+    }
+
+    my @event = @{ $decoded };
+    my $is_music_event = $music_events->{ $event[0] };
+    splice( @event, 1, 1 );                    # dtime
+    splice( @event, 1, 1 ) if $is_music_event; # channel
+
+    $event[0] = 'note_off' if ( $event[0] eq 'note_on' && $event[-1] == 0 );
+    return wantarray
+        ?  @event
+        : \@event;
+}
+
 =head2 send_message
 
     $device->send_message( $msg );
@@ -367,12 +403,6 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 NOTE: The dtime and channel values should be omitted from the message.
 
 =cut
-
-my $music_events = +{ map { $_ => 1 } qw/
-    note_off note_on key_after_touch
-    control_change patch_change
-    channel_after_touch pitch_wheel_change
-/ };
 
 sub send_event {
     my ( $self, @event ) = @_;
@@ -400,7 +430,8 @@ sub _create_device {
     croak "Unknown type : $self->{type}" unless $create_dispatch->{ $fn };
 
     $self->{queue_size_limit} //= $self->{bufsize} //= 1024;
-    my $api_by_name = $rtmidi_api_names->{ $self->{api_str} } if $self->{api_str};
+    my $api_by_name;
+    $api_by_name = $rtmidi_api_names->{ $self->{api_str} } if $self->{api_str};
     $self->{api} //= $api_by_name->[1] if $api_by_name;
     $self->{api} //= $rtmidi_api_names->{ unspecified }->[1];
     $self->{device} = $create_dispatch->{ $fn }->( $self->{api}, $self->{name}, $self->{queue_size_limit} );
