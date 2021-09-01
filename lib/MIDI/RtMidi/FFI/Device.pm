@@ -363,7 +363,10 @@ sub get_event {
     return unless $msg;
     $msg = "0$msg"; # restore dtime
     my $decoded = MIDI::Event::decode( \$msg )->[0];
-    return unless ref $decoded eq 'ARRAY';
+    if ( ref $decoded ne 'ARRAY' ) {
+        my $hmsg = join '', map { sprintf "%02x", ord $_ } split '', $msg;
+        warn "Could not decode message $hmsg";
+    }
 
     my @event = @{ $decoded };
     my $is_music_event = $music_events->{ $event[0] };
