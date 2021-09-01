@@ -343,6 +343,22 @@ sub get_message {
     rtmidi_in_get_message( $self->{device}, $self->{queue_size_limit} );
 }
 
+=head2 get_event
+
+    $device->get_event();
+
+Type 'in' only. Gets the next message from the queue, if available, as a decoded L<MIDI::Event>.
+
+=cut
+
+sub get_event {
+    my ( $self ) = @_;
+    my $msg = $self->get_message;
+    return unless $msg;
+    $msg = "0$msg"; # restore dtime
+    MIDI::Event::decode( \$msg );
+}
+
 =head2 send_message
 
     $device->send_message( $msg );
