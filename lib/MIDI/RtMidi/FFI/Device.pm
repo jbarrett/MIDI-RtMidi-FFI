@@ -12,7 +12,7 @@ MIDI::RtMidi::FFI::Device - OO interface for L<MIDI::RtMidi::FFI>
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 
