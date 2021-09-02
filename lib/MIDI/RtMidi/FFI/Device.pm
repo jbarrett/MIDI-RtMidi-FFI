@@ -284,7 +284,7 @@ sub get_current_api {
 Here be dragons.
 
     $device->set_callback( sub {
-        my ( $ts, $msg, $data );
+        my ( $ts, $msg, $data ) = @_;
         # handle $msg here
     }, $data );
 
