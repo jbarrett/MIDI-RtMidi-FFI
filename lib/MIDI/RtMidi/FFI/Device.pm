@@ -490,7 +490,7 @@ Please direct all requests to L<https://github.com/jbarrett/MIDI-RtMidi-FFI/issu
 
 =head1 COPYRIGHT
 
-Copyright 2019 John Barrett.
+Copyright 2019-2021 John Barrett.
 
 =head1 LICENSE
 

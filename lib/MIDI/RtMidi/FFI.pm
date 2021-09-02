@@ -193,7 +193,7 @@ L<RtMidi's C Interface|https://www.music.mcgill.ca/~gary/rtmidi/group__C-interfa
 MIDI::RtMidi::FFI requires librtmidi v4.0.0, though will possibly work with
 later versions.
 
-This is ̸b̸e̸t̸a̸  alpha software. Expect crashes, memory issues and possible API changes.
+This is alpha software. Expect crashes, memory issues and possible API changes.
 
 Check out L<MIDI::RtMidi::FFI::Device> for an OO interface to this module.
 
@@ -213,6 +213,8 @@ RTMIDI_ERROR_NO_DEVICES_FOUND, RTMIDI_ERROR_INVALID_DEVICE,
 RTMIDI_ERROR_MEMORY_ERROR, RTMIDI_ERROR_INVALID_PARAMETER,
 RTMIDI_ERROR_INVALID_USE, RTMIDI_ERROR_DRIVER_ERROR, RTMIDI_ERROR_SYSTEM_ERROR,
 RTMIDI_ERROR_THREAD_ERROR
+
+=head1 FUNCTIONS
 
 =head2 rtmidi_get_compiled_api
 
@@ -359,6 +361,8 @@ Send a single message out an open MIDI output port.
 
 L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
 
+L<Alien::RtMidi>
+
 L<MIDI::RtMidi::FFI::Device>
 
 L<MIDI::ALSA>
@@ -387,7 +391,7 @@ Please direct all requests to L<https://github.com/jbarrett/MIDI-RtMidi-FFI/issu
 
 =head1 COPYRIGHT
 
-Copyright 2019 John Barrett.
+Copyright 2019-2021 John Barrett.
 
 =head1 LICENSE
 
