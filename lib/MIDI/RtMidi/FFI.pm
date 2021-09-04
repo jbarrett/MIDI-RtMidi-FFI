@@ -3,7 +3,7 @@ use warnings;
 package MIDI::RtMidi::FFI;
 use base qw/ Exporter /;
 
-our $VERSION = '0.03';
+our $VERSION = '0.00';
 
 # ABSTRACT: Bindings for librtmidi - Realtime MIDI library
 
@@ -154,16 +154,6 @@ our @EXPORT_OK = _exports();
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 __END__
-
-=encoding UTF-8
-
-=head1 NAME
-
-MIDI::RtMidi::FFI - Perl bindings for RtMidi.
-
-=head1 VERSION
-
-version 0.03
 
 =head1 SYNOPSIS
 
@@ -375,10 +365,6 @@ L<MIDI::Music>
 
 L<MIDI::Realtime>
 
-=head1 AUTHOR
-
-John Barrett, <john@jbrt.org>
-
 =head1 CONTRIBUTING
 
 L<https://github.com/jbarrett/MIDI-RtMidi-FFI>
@@ -388,15 +374,6 @@ All comments and contributions welcome.
 =head1 BUGS AND SUPPORT
 
 Please direct all requests to L<https://github.com/jbarrett/MIDI-RtMidi-FFI/issues>
-
-=head1 COPYRIGHT
-
-Copyright 2019-2021 John Barrett.
-
-=head1 LICENSE
-
-This application is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
 
 =cut
 

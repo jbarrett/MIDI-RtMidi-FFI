@@ -6,14 +6,6 @@ package MIDI::RtMidi::FFI::Device;
 
 =encoding UTF-8
 
-=head1 NAME
-
-MIDI::RtMidi::FFI::Device - OO interface for L<MIDI::RtMidi::FFI>
-
-=head1 VERSION
-
-version 0.03
-
 =head1 SYNOPSIS
 
     use MIDI::RtMidi::FFI::Device;
@@ -35,7 +27,7 @@ use MIDI::RtMidi::FFI ':all';
 use MIDI::Event;
 use Carp;
 
-our $VERSION = $MIDI::RtMidi::FFI::VERSION;
+our $VERSION = '0.00';
 
 my $rtmidi_api_names = {
     unspecified => [ "Unknown",            RTMIDI_API_UNSPECIFIED ],
@@ -474,10 +466,6 @@ L<MIDI::RtMidi::FFI>
 
 L<MIDI::Event>
 
-=head1 AUTHOR
-
-John Barrett, <john@jbrt.org>
-
 =head1 CONTRIBUTING
 
 L<https://github.com/jbarrett/MIDI-RtMidi-FFI>
@@ -487,14 +475,5 @@ All comments and contributions welcome.
 =head1 BUGS AND SUPPORT
 
 Please direct all requests to L<https://github.com/jbarrett/MIDI-RtMidi-FFI/issues>
-
-=head1 COPYRIGHT
-
-Copyright 2019-2021 John Barrett.
-
-=head1 LICENSE
-
-This application is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
 
 =cut
