@@ -64,11 +64,11 @@ BEGIN {
 
 }
 
-use FFI::Platypus 1.00;
+use FFI::Platypus 2.00;
 use FFI::Platypus::Memory qw/ malloc free /;
 use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
 use Alien::RtMidi;
-my $ffi = FFI::Platypus->new( api => 1, lib => [ Alien::RtMidi->dynamic_libs ] );
+my $ffi = FFI::Platypus->new( api => 2, lib => [ Alien::RtMidi->dynamic_libs ] );
 
 {
     package RtMidiWrapper;
