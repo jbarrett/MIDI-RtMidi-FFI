@@ -46,7 +46,7 @@ BEGIN {
         rtmidi_open_virtual_port    => [ ['RtMidiPtr*', 'string'] => 'void' ],
         rtmidi_close_port           => [ ['RtMidiPtr*'] => 'void' ],
         rtmidi_get_port_count       => [ ['RtMidiPtr*'] => 'int' ],
-        rtmidi_get_port_name        => [ ['RtMidiPtr*', 'int'] => 'string' ],
+        rtmidi_get_port_name        => [ ['RtMidiPtr*', 'int', 'opaque', 'int*'] => 'int', \&_get_port_name ],
         rtmidi_in_create_default    => [ ['void'] => 'RtMidiInPtr*' ],
         rtmidi_in_create            => [ ['enum', 'string', 'unsigned int'] => 'RtMidiInPtr*' ],
         rtmidi_in_free              => [ ['RtMidiInPtr*'] => 'void', \&_free_wrapper ],
@@ -115,6 +115,17 @@ sub _get_compiled_api {
     my $api_arr = $ffi->cast( 'opaque' => "enum[$num_apis]", $apis );
     free $apis;
     return $api_arr;
+}
+
+sub _get_port_name {
+    my ( $sub, $dev, $port ) = @_;
+    my $size = 0;
+    $sub->( $dev, $port, undef, \$size );
+    my $buffer = malloc $size;
+    $sub->( $dev, $port, $buffer, \$size );
+    my $port_name = buffer_to_scalar( $buffer, $size );
+    free $buffer;
+    return $port_name;
 }
 
 sub _free_wrapper {
