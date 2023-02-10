@@ -99,6 +99,14 @@ sub _sorted_enum_keys {
     sort { $enum->{ $a } <=> $enum->{ $b } } keys %{ $enum };
 }
 
+# Guesswork to derive major version - RtMidi::getVersion is not exposed in C wrapper
+sub rtmidi_get_version {
+    return '3.0.0' unless $ffi->find_symbol('rtmidi_api_display_name');
+    my $fn = $ffi->function( rtmidi_api_name => ['int'] => 'string' );
+    return '5.0.0' if $fn->(5) eq "web";
+    return '4.0.0';
+}
+
 sub _exports {
     sort keys %binds,
     _sorted_enum_keys( $enum_RtMidiApi ),
