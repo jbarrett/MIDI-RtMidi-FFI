@@ -7,7 +7,6 @@ use FFI::Platypus 2.00;
 use FFI::Platypus::Memory qw/ malloc free /;
 use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
 use FFI::CheckLib 0.25 qw/ find_lib_or_exit /;
-use Memoize;
 
 our $VERSION = '0.00';
 
@@ -56,23 +55,24 @@ sub _init_api {
     }
 }
 
+my $rtmidi_version;
 # Guesswork to derive major version - RtMidi::getVersion is not exposed in C API
 sub rtmidi_get_version {
-    return '3.0.0' unless $ffi->find_symbol('rtmidi_api_display_name');
+    return $rtmidi_version if $rtmidi_version;
+
+    return $rtmidi_version = '3.0.0' unless $ffi->find_symbol('rtmidi_api_display_name');
 
     # specalutive, PR open ...
-    return $ffi->function( rtmidi_get_version => [] => 'string' )->()
+    return $rtmidi_version = $ffi->function( rtmidi_get_version => [] => 'string' )->()
         if ( $ffi->find_symbol('rtmidi_get_version') );
 
     # There is a mismatch between enums and API name in v5.0.0...
     my $fn = $ffi->function( rtmidi_api_name => ['int'] => 'string' );
-    return '5.0.0' if $fn->(5) eq "web";
-    return '4.0.0';
+    return $rtmidi_version = '5.0.0' if $fn->(5) eq "web";
+    $rtmidi_version = '4.0.0';
 }
 
 BEGIN {
-    memoize('rtmidi_get_version');
-
     _load_rtmidi();
     my $version = rtmidi_get_version();
     croak( "RtMidi v4.0.0 or later required" ) if $version lt '4.0.0';
