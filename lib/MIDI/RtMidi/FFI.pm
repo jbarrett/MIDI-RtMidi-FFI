@@ -7,7 +7,6 @@ our $VERSION = '0.00';
 
 # ABSTRACT: Bindings for librtmidi - Realtime MIDI library
 
-our $SKIP_FREE = 1;
 
 my $enum_RtMidiApi;
 my $enum_RtMidiErrorType;
@@ -134,12 +133,6 @@ sub _get_port_name {
     my $port_name = buffer_to_scalar( $buffer, $size );
     free $buffer;
     return $port_name;
-}
-
-sub _free_wrapper {
-    my ( $sub, $dev ) = @_;
-    rtmidi_close_port( $dev );
-    $sub->( $dev ) unless $SKIP_FREE;
 }
 
 sub _in_get_message {
