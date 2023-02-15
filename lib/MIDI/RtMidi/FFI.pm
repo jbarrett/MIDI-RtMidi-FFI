@@ -23,12 +23,38 @@ our $VERSION = '0.00';
         bool   => 'ok',
         string => 'msg'
     );
-
 };
 
 my $enum_RtMidiApi;
 my $enum_RtMidiErrorType;
 my %binds;
+my $ffi;
+sub _load_rtmidi {
+    $ffi = FFI::Platypus->new(
+        api => 2,
+        lib => [
+            $ENV{__PERL5_RTMIDI_FFI_TEST_LIBRARY_PATH__} # facilitate testing across versions
+              ? $ENV{__PERL5_RTMIDI_FFI_TEST_LIBRARY_PATH__}
+              : find_lib_or_exit(
+                  lib   => 'rtmidi',
+                  alien => 'Alien::RtMidi',
+                )
+        ]
+    );
+    return 1;
+}
+
+sub _init_api {
+    $ffi->type('record(RtMidiWrapper)' => 'RtMidiPtr');
+    $ffi->type('record(RtMidiWrapper)' => 'RtMidiInPtr');
+    $ffi->type('record(RtMidiWrapper)' => 'RtMidiOutPtr');
+    $ffi->type('(double,string,size_t,opaque)->void' => 'RtMidiCCallback');
+    $ffi->type(enum => 'RtMidiApi');
+    for my $fn ( keys %binds ) {
+        my @sig = @{ $binds{ $fn } };
+        $ffi->attach( $fn => @sig );
+    }
+}
 
 # Guesswork to derive major version - RtMidi::getVersion is not exposed in C API
 sub rtmidi_get_version {
@@ -45,7 +71,13 @@ sub rtmidi_get_version {
 }
 
 BEGIN {
-    $enum_RtMidiApi = {
+    memoize('rtmidi_get_version');
+
+    _load_rtmidi();
+    my $version = rtmidi_get_version();
+    croak( "RtMidi v4.0.0 or later required" ) if $version lt '4.0.0';
+
+    my $enum_RtMidiApi_4 = {
         RTMIDI_API_UNSPECIFIED  => 0,
         RTMIDI_API_MACOSX_CORE  => 1,
         RTMIDI_API_LINUX_ALSA   => 2,
@@ -54,6 +86,19 @@ BEGIN {
         RTMIDI_API_RTMIDI_DUMMY => 5,
         RTMIDI_API_NUM          => 6,
     };
+
+    # These changes are not reflected in the RtMidi C header
+    # This ordering reflects the C++ enum order
+    my $enum_RtMidiApi_5 = {
+        %{ $enum_RtMidiApi_4 },
+        RTMIDI_API_RTMIDI_DUMMY => 5,
+        RTMIDI_API_WEB_MIDI_API => 6,
+        RTMIDI_API_NUM          => 7,
+    };
+
+    $enum_RtMidiApi = $version ge '5.0.0'
+        ? $enum_RtMidiApi_5
+        : $enum_RtMidiApi_4;
 
     $enum_RtMidiErrorType = {
         RTMIDI_ERROR_WARNING           => 0,
@@ -69,45 +114,43 @@ BEGIN {
         RTMIDI_ERROR_THREAD_ERROR      => 10,
     };
 
-    %binds = (
+    my %binds_4 = (
         rtmidi_api_display_name     => [ ['enum'] => 'string' ],
         rtmidi_api_name             => [ ['enum'] => 'string' ],
-        rtmidi_get_compiled_api     => [ ['opaque', 'unsigned int'] => 'int', \&_get_compiled_api ],
         rtmidi_compiled_api_by_name => [ ['string'] => 'enum' ],
-        rtmidi_open_port            => [ ['RtMidiPtr*', 'int', 'string'] => 'void' ],
+        rtmidi_get_compiled_api     => [ ['opaque', 'unsigned int'] => 'int', \&_get_compiled_api],
+        rtmidi_open_port            => [ ['RtMidiPtr*', 'unsigned int', 'string'] => 'void' ],
         rtmidi_open_virtual_port    => [ ['RtMidiPtr*', 'string'] => 'void' ],
         rtmidi_close_port           => [ ['RtMidiPtr*'] => 'void' ],
-        rtmidi_get_port_count       => [ ['RtMidiPtr*'] => 'int' ],
-        rtmidi_get_port_name        => [ ['RtMidiPtr*', 'int', 'opaque', 'int*'] => 'int', \&_get_port_name ],
+        rtmidi_get_port_count       => [ ['RtMidiPtr*'] => 'unsigned int' ],
+        rtmidi_get_port_name        => [ ['RtMidiPtr*', 'unsigned int'] => 'string' ],
         rtmidi_in_create_default    => [ ['void'] => 'RtMidiInPtr*' ],
         rtmidi_in_create            => [ ['enum', 'string', 'unsigned int'] => 'RtMidiInPtr*' ],
-        rtmidi_in_free              => [ ['RtMidiInPtr*'] => 'void', \&_free_wrapper ],
+        rtmidi_in_free              => [ ['RtMidiInPtr*'] => 'void' ],
         rtmidi_in_get_current_api   => [ ['RtMidiInPtr*'] => 'enum' ],
         rtmidi_in_cancel_callback   => [ ['RtMidiInPtr*'] => 'void' ],
         rtmidi_in_ignore_types      => [ ['RtMidiInPtr*','bool','bool','bool'] => 'void' ],
         rtmidi_out_create_default   => [ ['void'] => 'RtMidiOutPtr*' ],
         rtmidi_out_create           => [ ['enum', 'string'] => 'RtMidiOutPtr*' ],
-        rtmidi_out_free             => [ ['RtMidiOutPtr*'] => 'void', \&_free_wrapper ],
+        rtmidi_out_free             => [ ['RtMidiOutPtr*'] => 'void' ],
         rtmidi_out_get_current_api  => [ ['RtMidiOutPtr*'] => 'enum' ],
         rtmidi_in_get_message       => [ ['RtMidiInPtr*', 'opaque', 'size_t*'] => 'double', \&_in_get_message ],
         rtmidi_out_send_message     => [ ['RtMidiOutPtr*', 'opaque', 'int' ] => 'int', \&_out_send_message ],
         rtmidi_in_set_callback      => [ ['RtMidiInPtr*','RtMidiCCallback','opaque'] => 'void', \&_in_set_callback ],
     );
 
+    my %binds_5 = (
+        %binds_4,
+        rtmidi_get_port_name        => [ ['RtMidiPtr*', 'unsigned int', 'opaque', 'int*'] => 'int', \&_get_port_name_5 ],
     );
-}
-$ffi->type('record(RtMidiWrapper)' => 'RtMidiPtr');
-$ffi->type('record(RtMidiWrapper)' => 'RtMidiInPtr');
-$ffi->type('record(RtMidiWrapper)' => 'RtMidiOutPtr');
-$ffi->type('(double,string,size_t,opaque)->void' => 'RtMidiCCallback');
 
-for my $fn ( keys %binds ) {
-    my @sig = @{ $binds{ $fn } };
-    $ffi->attach( $fn => @sig );
+    %binds = $version ge '5.0.0'
+        ? %binds_5
+        : %binds_4;
 }
 
 use constant $enum_RtMidiApi;
-$ffi->type(enum => 'RtMidiApi');
+use constant $enum_RtMidiErrorType;
 
 sub _sorted_enum_keys {
     my ( $enum ) = @_;
@@ -132,7 +175,7 @@ sub _get_compiled_api {
     return $api_arr;
 }
 
-sub _get_port_name {
+sub _get_port_name_5 {
     my ( $sub, $dev, $port ) = @_;
     my $size = 0;
     $sub->( $dev, $port, undef, \$size );
@@ -170,6 +213,7 @@ sub _in_set_callback {
     return $closure;
 }
 
+_init_api();
 our @EXPORT_OK = _exports();
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
@@ -200,8 +244,7 @@ Multimedia.
 
 MIDI::RtMidi::FFI provides a more-or-less direct binding to
 L<RtMidi's C Interface|https://www.music.mcgill.ca/~gary/rtmidi/group__C-interface.html>.
-MIDI::RtMidi::FFI requires librtmidi v4.0.0, though will possibly work with
-later versions.
+MIDI::RtMidi::FFI requires librtmidi v4.0.0 or later, should work with v5.0.0, and perhaps work with later versions.
 
 This is alpha software. Expect crashes, memory issues and possible API changes.
 
@@ -214,7 +257,7 @@ Check out L<MIDI::RtMidi::FFI::Device> for an OO interface to this module.
 
 RTMIDI_API_UNSPECIFIED, RTMIDI_API_MACOSX_CORE, RTMIDI_API_LINUX_ALSA,
 RTMIDI_API_UNIX_JACK, RTMIDI_API_WINDOWS_MM, RTMIDI_API_RTMIDI_DUMMY,
-RTMIDI_API_NUM
+RTMIDI_API_WEB_MIDI_API, RTMIDI_API_NUM
 
 =head2 RtMidiErrorType
 
