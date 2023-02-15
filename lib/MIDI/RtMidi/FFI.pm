@@ -158,9 +158,12 @@ sub _sorted_enum_keys {
 }
 
 sub _exports {
-    sort keys %binds,
-    _sorted_enum_keys( $enum_RtMidiApi ),
-    _sorted_enum_keys( $enum_RtMidiErrorType ),
+    (
+        'rtmidi_get_version',
+        sort( keys %binds ),
+        _sorted_enum_keys( $enum_RtMidiApi ),
+        _sorted_enum_keys( $enum_RtMidiErrorType )
+    );
 }
 
 sub _get_compiled_api {
