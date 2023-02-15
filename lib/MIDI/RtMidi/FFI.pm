@@ -7,6 +7,7 @@ use FFI::Platypus 2.00;
 use FFI::Platypus::Memory qw/ malloc free /;
 use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
 use FFI::CheckLib 0.25 qw/ find_lib_or_exit /;
+use Carp;
 
 our $VERSION = '0.00';
 
@@ -75,7 +76,7 @@ sub rtmidi_get_version {
 BEGIN {
     _load_rtmidi();
     my $version = rtmidi_get_version();
-    croak( "RtMidi v4.0.0 or later required" ) if $version lt '4.0.0';
+    croak( "RtMidi v4.0.0 or later required. Have you tried installing Alien::RtMidi?" ) if $version lt '4.0.0';
 
     my $enum_RtMidiApi_4 = {
         RTMIDI_API_UNSPECIFIED  => 0,
