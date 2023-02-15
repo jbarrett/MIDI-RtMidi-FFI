@@ -253,7 +253,6 @@ This is alpha software. Expect crashes, memory issues and possible API changes.
 
 Check out L<MIDI::RtMidi::FFI::Device> for an OO interface to this module.
 
-
 =head1 ENUMS
 
 =head2 RtMidiApi
@@ -372,8 +371,8 @@ Your callback receives the timestamp of the event, the message and the data you
 set while defining the callback. Due to the way params are packed, this data
 can only be a simple scalar, not a reference.
 
-B<NB> This is not recommended in the current implementation. If a message
-arrives while the callback is already running, your program will segfault!
+B<NB> RtMidi provides no event loop "runner". A callback may interrupt your program
+at any time, so it should probably sleep or await input while events are ongoing.
 
 =head2 rtmidi_in_cancel_callback
 
