@@ -3,14 +3,47 @@ use warnings;
 package MIDI::RtMidi::FFI;
 use base qw/ Exporter /;
 
+use FFI::Platypus 2.00;
+use FFI::Platypus::Memory qw/ malloc free /;
+use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
+use FFI::CheckLib 0.25 qw/ find_lib_or_exit /;
+use Memoize;
+
 our $VERSION = '0.00';
 
 # ABSTRACT: Bindings for librtmidi - Realtime MIDI library
 
+{
+    package RtMidiWrapper;
+    use FFI::Platypus::Record;
+
+    record_layout_1(
+        opaque => 'ptr',
+        opaque => 'data',
+        bool   => 'ok',
+        string => 'msg'
+    );
+
+};
 
 my $enum_RtMidiApi;
 my $enum_RtMidiErrorType;
 my %binds;
+
+# Guesswork to derive major version - RtMidi::getVersion is not exposed in C API
+sub rtmidi_get_version {
+    return '3.0.0' unless $ffi->find_symbol('rtmidi_api_display_name');
+
+    # specalutive, PR open ...
+    return $ffi->function( rtmidi_get_version => [] => 'string' )->()
+        if ( $ffi->find_symbol('rtmidi_get_version') );
+
+    # There is a mismatch between enums and API name in v5.0.0...
+    my $fn = $ffi->function( rtmidi_api_name => ['int'] => 'string' );
+    return '5.0.0' if $fn->(5) eq "web";
+    return '4.0.0';
+}
+
 BEGIN {
     $enum_RtMidiApi = {
         RTMIDI_API_UNSPECIFIED  => 0,
@@ -61,23 +94,6 @@ BEGIN {
         rtmidi_in_set_callback      => [ ['RtMidiInPtr*','RtMidiCCallback','opaque'] => 'void', \&_in_set_callback ],
     );
 
-}
-
-use FFI::Platypus 2.00;
-use FFI::Platypus::Memory qw/ malloc free /;
-use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
-use Alien::RtMidi;
-my $ffi = FFI::Platypus->new( api => 2, lib => [ Alien::RtMidi->dynamic_libs ] );
-
-{
-    package RtMidiWrapper;
-    use FFI::Platypus::Record;
-
-    record_layout(
-        opaque => 'ptr',
-        opaque => 'data',
-        bool   => 'ok',
-        string => 'msg'
     );
 }
 $ffi->type('record(RtMidiWrapper)' => 'RtMidiPtr');
@@ -96,14 +112,6 @@ $ffi->type(enum => 'RtMidiApi');
 sub _sorted_enum_keys {
     my ( $enum ) = @_;
     sort { $enum->{ $a } <=> $enum->{ $b } } keys %{ $enum };
-}
-
-# Guesswork to derive major version - RtMidi::getVersion is not exposed in C wrapper
-sub rtmidi_get_version {
-    return '3.0.0' unless $ffi->find_symbol('rtmidi_api_display_name');
-    my $fn = $ffi->function( rtmidi_api_name => ['int'] => 'string' );
-    return '5.0.0' if $fn->(5) eq "web";
-    return '4.0.0';
 }
 
 sub _exports {
@@ -217,6 +225,12 @@ RTMIDI_ERROR_INVALID_USE, RTMIDI_ERROR_DRIVER_ERROR, RTMIDI_ERROR_SYSTEM_ERROR,
 RTMIDI_ERROR_THREAD_ERROR
 
 =head1 FUNCTIONS
+
+=head2 rtmidi_get_version
+
+    rtmidi_get_version()
+
+Returns the best-guess of the version number of the RtMidi library in use.
 
 =head2 rtmidi_get_compiled_api
 
