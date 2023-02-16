@@ -269,24 +269,37 @@ sub get_current_api {
     $api_dispatch->{ $fn }->( $self->{device} );
 }
 
-=head2 set_callback 🐉
+=head2 set_callback
 
-Here be dragons.
+    $device->set_callback( sub {
+        my ( $ts, $msg ) = @_;
+        # handle $msg here
+    } );
+
+Type 'in' only. Sets a callback to be executed when an incoming MIDI message is
+received. Your callback receives the time which has elapsed since the previous
+event in seconds, alongside the MIDI message.
+
+As a callback may occur at any point in your program's flow, the program should
+probably not be doing much when it occurs. That is, programs handling RtMidi
+callbacks should be asleep or awaiting user input when the callback is
+triggered.
+
+For the sake of compatibility with previous versions, some data may be passed
+which is passed to the callback for each event. This data parameter exists in
+the librtmidi interface to work around the lack of closures in C. It is less
+useful in Perl, though you are free to use it.
+
+The data is not stored by librtmidi, so may be any Perl data structure you
+like.
 
     $device->set_callback( sub {
         my ( $ts, $msg, $data ) = @_;
         # handle $msg here
     }, $data );
 
-Type 'in' only. Sets a callback to be executed when an incoming message is
-received. Your callback receives the timestamp of the event, the message, and
-optionally some data you set while defining the callback. This data should
-be a simple scalar string, not a reference or other data structure.
-
-In my experience, receiving a message on your device while a callback is in
-progress results in a crash.
-
-Depending on the message rate your application expects, this may be OK.
+See the examples included with this dist for some ideas on how to incorporate
+callbacks into your program.
 
 =cut
 
@@ -506,13 +519,6 @@ sub DESTROY {
 1;
 
 __END__
-
-=head1 TODO
-
-=head2 Deprecate the dragon
-
-The callback mechanism for handling incoming events is useful. It would be nice
-if it were more robust.
 
 =head1 SEE ALSO
 
