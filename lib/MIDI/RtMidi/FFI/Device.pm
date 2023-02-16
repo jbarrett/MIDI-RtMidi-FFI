@@ -510,10 +510,13 @@ my $free_dispatch = {
 sub DESTROY {
     my ( $self ) = @_;
     my $fn = $free_dispatch->{ $self->{type} };
-    croak "Unable to free type : $self->{type}" unless $fn;
+    # croak "Unable to free type : $self->{type}" unless $fn;
+    # There is an extant issue around the Perl object lifecycle and C++ object lifecycle.
+    # If we free the RtMidiPtr here, a double-free error may occur on process exit.
+    # For now, cancel the callback and close the port, then trust the process ...
+    $self->cancel_callback if $self->{callback};
     $self->close_port;
-    delete $self->{callback};
-    $fn->( delete $self->{device} );
+    # $fn->( $self->{device} );
 }
 
 1;
