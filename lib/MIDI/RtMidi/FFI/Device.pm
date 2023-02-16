@@ -38,12 +38,6 @@ my $rtmidi_api_names = {
     dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ]
 };
 
-my $music_events = +{ map { $_ => 1 } qw/
-    note_off note_on key_after_touch
-    control_change patch_change
-    channel_after_touch pitch_wheel_change
-/ };
-
 =head1 METHODS
 
 =head2 new
