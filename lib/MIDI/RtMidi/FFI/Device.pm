@@ -387,7 +387,8 @@ sub get_message_decoded {
 Alias for L</get_message_decoded>, for backwards compatibility.
 
 B<NB> Previous versions of this call spliced out the channel portion of the
-message. This is no longer the case. The dtime portion is still removed.
+message. This is no longer the case. The dtime (or delta-time) portion is still
+removed.
 
 =cut
 
