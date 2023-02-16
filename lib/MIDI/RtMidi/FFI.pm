@@ -48,7 +48,7 @@ sub _init_api {
     $ffi->type('record(RtMidiWrapper)' => 'RtMidiPtr');
     $ffi->type('record(RtMidiWrapper)' => 'RtMidiInPtr');
     $ffi->type('record(RtMidiWrapper)' => 'RtMidiOutPtr');
-    $ffi->type('(double,string,size_t,opaque)->void' => 'RtMidiCCallback');
+    $ffi->type('(double,opaque,size_t,opaque)->void' => 'RtMidiCCallback');
     $ffi->type(enum => 'RtMidiApi');
     for my $fn ( keys %binds ) {
         my @sig = @{ $binds{ $fn } };
@@ -210,7 +210,8 @@ sub _in_set_callback {
     my ( $sub, $dev, $cb, $data ) = @_;
     my $callback = sub {
         my ( $timestamp, $inmsg, $size ) = @_;
-        $cb->( $timestamp, $inmsg, $data );
+        my $msg = buffer_to_scalar( $inmsg, $size );
+        $cb->( $timestamp, $msg, $data );
     };
     my $closure = $ffi->closure($callback);
     $sub->( $dev, $closure );
