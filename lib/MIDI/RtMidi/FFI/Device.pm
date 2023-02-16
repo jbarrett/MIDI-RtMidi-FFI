@@ -12,9 +12,9 @@ package MIDI::RtMidi::FFI::Device;
     
     my $device = MIDI::RtMidi::FFI::Device->new;
     $device->open_virtual_port( 'perl-rtmidi' );
-    $device->send_event( note_on => 0x40, 0x5a );
+    $device->send_event( note_on => 0x00, 0x40, 0x5a );
     sleep 1;
-    $device->send_event( note_off => 0x40, 0x5a );
+    $device->send_event( note_off => 0x00, 0x40, 0x5a );
 
 =head1 DESCRIPTION
 
@@ -298,6 +298,28 @@ sub set_callback {
     $self->{callback} = rtmidi_in_set_callback( $self->{device}, $cb, $data );
 }
 
+=head2 set_callback_decoded
+
+    $device->set_callback_decoded( sub {
+        my ( $ts, $msg, $event ) = @_;
+        # handle $msg / $event here
+    } );
+
+Same as L</set_callback>, though also attempts to decode the message with
+L<MIDI::Event>, which is passed to the callback as an array ref. The original
+message is also sent in case this fails.
+
+=cut
+
+sub set_callback_decoded {
+    my ( $self, $cb, $data ) = @_;
+    my $event_cb = sub {
+        my ( $ts, $msg, $data ) = @_;
+        my $decoded = $self->decode_message( $msg );
+        $cb->( $ts, $msg, $decoded, $data );
+    };
+    $self->set_callback( $event_cb, $data );
+}
 =head2 cancel_callback
 
     $device->cancel_callback();
@@ -343,32 +365,60 @@ sub get_message {
 
 =head2 get_event
 
-    $device->get_event();
+    $device->get_message_decoded();
 
-Type 'in' only. Gets the next message from the queue, if available, as a decoded L<MIDI::Event>.
+Type 'in' only. Gets the next message from the queue, if available, as a
+decoded L<MIDI::Event>.
 
 =cut
 
-sub get_event {
+sub get_message_decoded {
     my ( $self ) = @_;
-    my $msg = $self->get_message;
+    $self->decode_message( $self->get_message );
+}
+
+=head2 get_event
+
+Alias for L</get_message_decoded>, for backwards compatibility.
+
+B<NB> Previous versions of this call spliced out the channel portion of the
+message. This is no longer the case. The dtime portion is still removed.
+
+=cut
+
+*get_event = \&get_message_decoded;
+
+=head2 decode_message
+
+    $device->decode_message( $msg );
+
+Attempts to decode the passed message with L<Midi::Event>. Decoded messages
+should match the events listed in MIDI::Event documentation, except without
+dtime.
+
+=cut
+
+sub decode_message {
+    my ( $self, $msg ) = @_;
     return unless $msg;
-    $msg = "0$msg"; # restore dtime
+
+    # Real-time messages don't have 'dtime', but MIDI::Event expects it:
+    $msg = "\0$msg";
+
     my $decoded = MIDI::Event::decode( \$msg )->[0];
+
     if ( ref $decoded ne 'ARRAY' ) {
-        my $hmsg = join '', map { sprintf "%02x", ord $_ } split '', $msg;
-        warn "Could not decode message $hmsg";
+        warn "Could not decode message " . unpack( 'H*', $msg );
+        return;
     }
 
-    my @event = @{ $decoded };
-    my $is_music_event = $music_events->{ $event[0] };
-    splice( @event, 1, 1 );                    # dtime
-    splice( @event, 1, 1 ) if $is_music_event; # channel
+    # Delete dtime
+    splice( @{ $decoded }, 1, 1 );
 
-    $event[0] = 'note_off' if ( $event[0] eq 'note_on' && $event[-1] == 0 );
+    $decoded->[0] = 'note_off' if ( $decoded->[0] eq 'note_on' && $decoded->[-1] == 0 );
     return wantarray
-        ?  @event
-        : \@event;
+        ? @{ $decoded }
+        : $decoded;
 }
 
 =head2 send_message
@@ -388,21 +438,29 @@ sub send_message {
 =head2 send_event
 
     $device->send_event( @event );
-    $device->send_event( note_on => 0x40, 0x5a );
+    # Event, channel, note, velocity
+    $device->send_event( note_on => 0x00, 0x40, 0x5a );
 
 Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
+The specification for events is the same as those listed in MIDI::Event's
+documentation, except dtime should be omitted.
 
-NOTE: The dtime and channel values should be omitted from the message.
+B<NB> Previous versions of this module stripped channel data from messages.
+This is no longer the case.
 
 =cut
 
 sub send_event {
     my ( $self, @event ) = @_;
-    my $is_music_event = $music_events->{ $event[0] };
-    splice @event, 1, 0, 0;                     # dtime
-    splice @event, 1, 0, 0 if $is_music_event;  # channel
+
+    # Insert 0 dtime
+    splice @event, 1, 0, 0;
+
     my $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
-    substr( $$msg, 0, 1 ) = ''; # snip dtime
+
+    # Strip dtime before send
+    substr( $$msg, 0, 1 ) = '';
+
     $self->send_message( $$msg );
 }
 
