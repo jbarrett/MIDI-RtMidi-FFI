@@ -38,6 +38,7 @@ $SIG{TERM} = sub { $midi_rtn->kill('TERM') };
 async sub process_midi_events {
     while ( my $event = await $midi_ch->recv ) {
         say "recv took " . tv_interval( $event->[0] ) . "s";
+        say "ts " . $event->[1] . "s";
         say unpack 'H*', $event->[2];
     }
 }
