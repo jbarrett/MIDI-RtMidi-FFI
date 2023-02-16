@@ -92,7 +92,7 @@ B<bufsize> -
 =item *
 
 B<ignore_sysex> -
-(Type 'in' only) Ignore incoming SYSEX messages (defaults to true)
+(Type 'in' only) Ignore incoming SysEx messages (defaults to true)
 
 =item *
 
@@ -103,8 +103,6 @@ B<ignore_timing> -
 
 B<ignore_sensing> -
 (Type 'in' only) Ignore incoming active sensing messages (defaults to true)
-
-=item *
 
 =back
 
