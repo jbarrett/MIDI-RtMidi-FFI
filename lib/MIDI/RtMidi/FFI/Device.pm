@@ -456,8 +456,10 @@ This is no longer the case.
 
 =cut
 
-sub send_event {
+sub encode_message {
     my ( $self, @event ) = @_;
+
+    $event[0] = 'sysex_f0' if $event[0] eq 'sysex';
 
     # Insert 0 dtime
     splice @event, 1, 0, 0;
@@ -467,7 +469,15 @@ sub send_event {
     # Strip dtime before send
     substr( $$msg, 0, 1 ) = '';
 
-    $self->send_message( $$msg );
+    # Terminate SysEx messages (hax hax hax, probably fragile...)
+    my $first = substr( $$msg, 0, 1 );
+    if ( ( $first eq chr( 0xf0 ) || $first eq chr( 0xf7 ) ) && substr( $$msg, -1, 1 ) ne chr( 0xf7 ) ) {
+        $$msg .= chr( 0xf7 );
+    }
+
+    return $$msg;
+}
+
 }
 
 sub port_name { $_[0]->{port_name}; }
