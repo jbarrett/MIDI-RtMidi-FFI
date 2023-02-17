@@ -409,7 +409,7 @@ sub decode_message {
     return unless $msg;
 
     # Real-time messages don't have 'dtime', but MIDI::Event expects it:
-    $msg = "\0$msg";
+    $msg = chr(0) . $msg;
 
     my $decoded = MIDI::Event::decode( \$msg )->[0];
 
@@ -441,18 +441,14 @@ sub send_message {
     rtmidi_out_send_message( $self->{device}, $msg );
 }
 
-=head2 send_event
+=head2 encode_message
 
-    $device->send_event( @event );
-    # Event, channel, note, velocity
-    $device->send_event( note_on => 0x00, 0x40, 0x5a );
+    my $msg = $device->encode_message( note_on => 0x00, 0x40, 0x5a )
+    $device->send_message( $msg );
 
-Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
+Attempts to encode the passed message with L<MIDI::Event>.
 The specification for events is the same as those listed in MIDI::Event's
 documentation, except dtime should be omitted.
-
-B<NB> Previous versions of this module stripped channel data from messages.
-This is no longer the case.
 
 =cut
 
@@ -478,7 +474,32 @@ sub encode_message {
     return $$msg;
 }
 
+=head2 send_message_encoded
+
+    $device->send_message_encoded( @event );
+    # Event, channel, note, velocity
+    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+    $device->send_message_encoded( sysex => "Hello, computer?" );
+
+Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
+
+=cut
+
+sub send_message_encoded {
+    my ( $self, @event ) = @_;
+    $self->send_message( $self->encode_message( @event ) );
 }
+
+=head2 send_event
+
+Alias for L</send_message_encoded>, for backwards compatibility.
+
+B<NB> Previous versions of this module stripped channel data from messages.
+This is no longer the case - channel should be provided where necessary.
+
+=cut
+
+*send_event = \&send_message_encoded;
 
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
