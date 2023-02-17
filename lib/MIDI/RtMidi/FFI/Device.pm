@@ -549,6 +549,14 @@ sub DESTROY {
 
 __END__
 
+=head1 KNOWN ISSUES
+
+Use of L<MIDI::Event> is a bit of a hack for convenience, exploiting the
+similarity of realtime MIDI messages and MIDI song file messages. It may break
+in unexpected ways if used for large SysEx messages or other "non-music"
+events, though should be fine for encoding and decoding note, pitch, aftertouch
+and CC messages.
+
 =head1 SEE ALSO
 
 L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
