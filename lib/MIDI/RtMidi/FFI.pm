@@ -210,10 +210,11 @@ sub _in_set_callback {
     my ( $sub, $dev, $cb, $data ) = @_;
     my $callback = sub {
         my ( $timestamp, $inmsg, $size ) = @_;
+        return if !$size;
         my $msg = buffer_to_scalar( $inmsg, $size );
         $cb->( $timestamp, $msg, $data );
     };
-    my $closure = $ffi->closure($callback);
+    my $closure = $ffi->closure( $callback );
     $sub->( $dev, $closure );
     return $closure;
 }
