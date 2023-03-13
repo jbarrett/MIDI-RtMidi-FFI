@@ -542,7 +542,7 @@ sub DESTROY {
     # There is an extant issue around the Perl object lifecycle and C++ object lifecycle.
     # If we free the RtMidiPtr here, a double-free error may occur on process exit.
     # For now, cancel the callback and close the port, then trust the process ...
-    $self->cancel_callback if $self->{callback};
+    $self->cancel_callback;
     $self->close_port;
     # $fn->( $self->{device} );
 }
