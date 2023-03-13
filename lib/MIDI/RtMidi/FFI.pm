@@ -294,19 +294,19 @@ otherwise a count of available APIs is returned.
 
     rtmidi_api_display_name( $api );
 
-From v4.0.0. Returns the associated display name for a RTMIDI_API constant.
+Returns the associated display name for a RTMIDI_API constant.
 
 =head2 rtmidi_api_name
 
     rtmidi_api_name( $api );
 
-From v4.0.0. Returns the associated name for a given RTMIDI_API constant.
+Returns the associated name for a given RTMIDI_API constant.
 
 =head2 rtmidi_compiled_api_by_name
 
     rtmidi_compiled_api_by_name( $name );
 
-From v4.0.0. Returns the associated RTMIDI_API constant for a given name.
+Returns the associated RTMIDI_API constant for a given name.
 
 =head2 rtmidi_open_port
 
@@ -318,7 +318,9 @@ Open a MIDI port.
 
     rtmidi_open_virtual_port( $device, $name );
 
-Creates a virtual MIDI port to which other software applications can connect.
+Creates a virtual MIDI port to which other software applications may be connected.
+
+This operation is not supported on Windows.
 
 =head2 rtmidi_close_port
 
@@ -356,8 +358,6 @@ Create a MIDI in device with initial values.
 
 Free the given MIDI in device.
 
-This currently skips delegating device deletion to librtmidi -- it just closes the port.
-
 =head2 rtmidi_in_get_current_api
 
     rtmidi_in_get_current_api( $device );
@@ -370,9 +370,9 @@ Return the RTMIDI_API constant for the given device.
 
 Set a callback function to be invoked for incoming MIDI messages.
 
-Your callback receives the timestamp of the event, the message and the data you
-set while defining the callback. Due to the way params are packed, this data
-can only be a simple scalar, not a reference.
+Your callback receives the timestamp of the event, the message and some data
+you may optionally set while defining the callback. This data-passing
+functionality acts as a workaround for systems without closure support.
 
 B<NB> RtMidi provides no event loop "runner". A callback may interrupt your program
 at any time, so it should probably sleep or await input while events are ongoing.
@@ -406,8 +406,6 @@ Create a MIDI out device with initial values.
     rtmidi_out_free( $device );
 
 Free the given MIDI out device.
-
-This currently skips delegating device deletion to librtmidi -- it just closes the port.
 
 =head2 rtmidi_out_get_current_api
 

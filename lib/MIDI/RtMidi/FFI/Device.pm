@@ -133,7 +133,7 @@ sub ptr  { $_[0]->{device}->ptr }
 
     $device->open_virtual_port( $name );
 
-Open a virtual device port.
+Open a virtual device port. A virtual device may be connected to other MIDI software, just as with a hardware device.
 
 This method will not work on Windows.
 
@@ -335,7 +335,9 @@ Type 'in' only. Removes the callback from your device.
 
 sub cancel_callback {
     my ( $self ) = @_;
+    return unless $self->{callback};
     croak "Unable to cancel_callback for device type : $self->{type}" unless $self->{type} eq 'in';
+    delete $self->{callback};
     rtmidi_in_cancel_callback( $self->{device} );
 }
 
@@ -431,7 +433,7 @@ sub decode_message {
 
     $device->send_message( $msg );
 
-Type 'out' only. Sends a message to the open port.
+Type 'out' only. Sends a message to the device's open port.
 
 =cut
 
