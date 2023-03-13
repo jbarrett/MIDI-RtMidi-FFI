@@ -12,9 +12,9 @@ package MIDI::RtMidi::FFI::Device;
     
     my $device = MIDI::RtMidi::FFI::Device->new;
     $device->open_virtual_port( 'perl-rtmidi' );
-    $device->send_event( note_on => 0x40, 0x5a );
+    $device->send_event( note_on => 0x00, 0x40, 0x5a );
     sleep 1;
-    $device->send_event( note_off => 0x40, 0x5a );
+    $device->send_event( note_off => 0x00, 0x40, 0x5a );
 
 =head1 DESCRIPTION
 
@@ -37,12 +37,6 @@ my $rtmidi_api_names = {
     winmm       => [ "Windows MultiMedia", RTMIDI_API_WINDOWS_MM ],
     dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ]
 };
-
-my $music_events = +{ map { $_ => 1 } qw/
-    note_off note_on key_after_touch
-    control_change patch_change
-    channel_after_touch pitch_wheel_change
-/ };
 
 =head1 METHODS
 
@@ -92,7 +86,7 @@ B<bufsize> -
 =item *
 
 B<ignore_sysex> -
-(Type 'in' only) Ignore incoming SYSEX messages (defaults to true)
+(Type 'in' only) Ignore incoming SysEx messages (defaults to true)
 
 =item *
 
@@ -103,8 +97,6 @@ B<ignore_timing> -
 
 B<ignore_sensing> -
 (Type 'in' only) Ignore incoming active sensing messages (defaults to true)
-
-=item *
 
 =back
 
@@ -141,7 +133,7 @@ sub ptr  { $_[0]->{device}->ptr }
 
     $device->open_virtual_port( $name );
 
-Open a virtual device port.
+Open a virtual device port. A virtual device may be connected to other MIDI software, just as with a hardware device.
 
 This method will not work on Windows.
 
@@ -271,24 +263,37 @@ sub get_current_api {
     $api_dispatch->{ $fn }->( $self->{device} );
 }
 
-=head2 set_callback 🐉
+=head2 set_callback
 
-Here be dragons.
+    $device->set_callback( sub {
+        my ( $ts, $msg ) = @_;
+        # handle $msg here
+    } );
+
+Type 'in' only. Sets a callback to be executed when an incoming MIDI message is
+received. Your callback receives the time which has elapsed since the previous
+event in seconds, alongside the MIDI message.
+
+As a callback may occur at any point in your program's flow, the program should
+probably not be doing much when it occurs. That is, programs handling RtMidi
+callbacks should be asleep or awaiting user input when the callback is
+triggered.
+
+For the sake of compatibility with previous versions, some data may be passed
+which is passed to the callback for each event. This data parameter exists in
+the librtmidi interface to work around the lack of closures in C. It is less
+useful in Perl, though you are free to use it.
+
+The data is not stored by librtmidi, so may be any Perl data structure you
+like.
 
     $device->set_callback( sub {
         my ( $ts, $msg, $data ) = @_;
         # handle $msg here
     }, $data );
 
-Type 'in' only. Sets a callback to be executed when an incoming message is
-received. Your callback receives the timestamp of the event, the message, and
-optionally some data you set while defining the callback. This data should
-be a simple scalar string, not a reference or other data structure.
-
-In my experience, receiving a message on your device while a callback is in
-progress results in a crash.
-
-Depending on the message rate your application expects, this may be OK.
+See the examples included with this dist for some ideas on how to incorporate
+callbacks into your program.
 
 =cut
 
@@ -298,6 +303,28 @@ sub set_callback {
     $self->{callback} = rtmidi_in_set_callback( $self->{device}, $cb, $data );
 }
 
+=head2 set_callback_decoded
+
+    $device->set_callback_decoded( sub {
+        my ( $ts, $msg, $event ) = @_;
+        # handle $msg / $event here
+    } );
+
+Same as L</set_callback>, though also attempts to decode the message with
+L<MIDI::Event>, which is passed to the callback as an array ref. The original
+message is also sent in case this fails.
+
+=cut
+
+sub set_callback_decoded {
+    my ( $self, $cb, $data ) = @_;
+    my $event_cb = sub {
+        my ( $ts, $msg, $data ) = @_;
+        my $decoded = $self->decode_message( $msg );
+        $cb->( $ts, $msg, $decoded, $data );
+    };
+    $self->set_callback( $event_cb, $data );
+}
 =head2 cancel_callback
 
     $device->cancel_callback();
@@ -308,7 +335,9 @@ Type 'in' only. Removes the callback from your device.
 
 sub cancel_callback {
     my ( $self ) = @_;
+    return unless $self->{callback};
     croak "Unable to cancel_callback for device type : $self->{type}" unless $self->{type} eq 'in';
+    delete $self->{callback};
     rtmidi_in_cancel_callback( $self->{device} );
 }
 
@@ -343,39 +372,68 @@ sub get_message {
 
 =head2 get_event
 
-    $device->get_event();
+    $device->get_message_decoded();
 
-Type 'in' only. Gets the next message from the queue, if available, as a decoded L<MIDI::Event>.
+Type 'in' only. Gets the next message from the queue, if available, as a
+decoded L<MIDI::Event>.
 
 =cut
 
-sub get_event {
+sub get_message_decoded {
     my ( $self ) = @_;
-    my $msg = $self->get_message;
+    $self->decode_message( $self->get_message );
+}
+
+=head2 get_event
+
+Alias for L</get_message_decoded>, for backwards compatibility.
+
+B<NB> Previous versions of this call spliced out the channel portion of the
+message. This is no longer the case. The dtime (or delta-time) portion is still
+removed.
+
+=cut
+
+*get_event = \&get_message_decoded;
+
+=head2 decode_message
+
+    $device->decode_message( $msg );
+
+Attempts to decode the passed message with L<Midi::Event>. Decoded messages
+should match the events listed in MIDI::Event documentation, except without
+dtime.
+
+=cut
+
+sub decode_message {
+    my ( $self, $msg ) = @_;
     return unless $msg;
-    $msg = "0$msg"; # restore dtime
+
+    # Real-time messages don't have 'dtime', but MIDI::Event expects it:
+    $msg = chr(0) . $msg;
+
     my $decoded = MIDI::Event::decode( \$msg )->[0];
+
     if ( ref $decoded ne 'ARRAY' ) {
-        my $hmsg = join '', map { sprintf "%02x", ord $_ } split '', $msg;
-        warn "Could not decode message $hmsg";
+        warn "Could not decode message " . unpack( 'H*', $msg );
+        return;
     }
 
-    my @event = @{ $decoded };
-    my $is_music_event = $music_events->{ $event[0] };
-    splice( @event, 1, 1 );                    # dtime
-    splice( @event, 1, 1 ) if $is_music_event; # channel
+    # Delete dtime
+    splice( @{ $decoded }, 1, 1 );
 
-    $event[0] = 'note_off' if ( $event[0] eq 'note_on' && $event[-1] == 0 );
+    $decoded->[0] = 'note_off' if ( $decoded->[0] eq 'note_on' && $decoded->[-1] == 0 );
     return wantarray
-        ?  @event
-        : \@event;
+        ? @{ $decoded }
+        : $decoded;
 }
 
 =head2 send_message
 
     $device->send_message( $msg );
 
-Type 'out' only. Sends a message to the open port.
+Type 'out' only. Sends a message to the device's open port.
 
 =cut
 
@@ -385,26 +443,65 @@ sub send_message {
     rtmidi_out_send_message( $self->{device}, $msg );
 }
 
-=head2 send_event
+=head2 encode_message
 
-    $device->send_event( @event );
-    $device->send_event( note_on => 0x40, 0x5a );
+    my $msg = $device->encode_message( note_on => 0x00, 0x40, 0x5a )
+    $device->send_message( $msg );
 
-Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
-
-NOTE: The dtime and channel values should be omitted from the message.
+Attempts to encode the passed message with L<MIDI::Event>.
+The specification for events is the same as those listed in MIDI::Event's
+documentation, except dtime should be omitted.
 
 =cut
 
-sub send_event {
+sub encode_message {
     my ( $self, @event ) = @_;
-    my $is_music_event = $music_events->{ $event[0] };
-    splice @event, 1, 0, 0;                     # dtime
-    splice @event, 1, 0, 0 if $is_music_event;  # channel
+
+    $event[0] = 'sysex_f0' if $event[0] eq 'sysex';
+
+    # Insert 0 dtime
+    splice @event, 1, 0, 0;
+
     my $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
-    substr( $$msg, 0, 1 ) = ''; # snip dtime
-    $self->send_message( $$msg );
+
+    # Strip dtime before send
+    substr( $$msg, 0, 1 ) = '';
+
+    # Terminate SysEx messages (hax hax hax, probably fragile...)
+    my $first = substr( $$msg, 0, 1 );
+    if ( ( $first eq chr( 0xf0 ) || $first eq chr( 0xf7 ) ) && substr( $$msg, -1, 1 ) ne chr( 0xf7 ) ) {
+        $$msg .= chr( 0xf7 );
+    }
+
+    return $$msg;
 }
+
+=head2 send_message_encoded
+
+    $device->send_message_encoded( @event );
+    # Event, channel, note, velocity
+    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+    $device->send_message_encoded( sysex => "Hello, computer?" );
+
+Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
+
+=cut
+
+sub send_message_encoded {
+    my ( $self, @event ) = @_;
+    $self->send_message( $self->encode_message( @event ) );
+}
+
+=head2 send_event
+
+Alias for L</send_message_encoded>, for backwards compatibility.
+
+B<NB> Previous versions of this module stripped channel data from messages.
+This is no longer the case - channel should be provided where necessary.
+
+=cut
+
+*send_event = \&send_message_encoded;
 
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
@@ -441,22 +538,26 @@ my $free_dispatch = {
 sub DESTROY {
     my ( $self ) = @_;
     my $fn = $free_dispatch->{ $self->{type} };
-    croak "Unable to free type : $self->{type}" unless $fn;
+    # croak "Unable to free type : $self->{type}" unless $fn;
+    # There is an extant issue around the Perl object lifecycle and C++ object lifecycle.
+    # If we free the RtMidiPtr here, a double-free error may occur on process exit.
+    # For now, cancel the callback and close the port, then trust the process ...
+    $self->cancel_callback if $self->{callback};
     $self->close_port;
-    delete $self->{callback};
-    $fn->( delete $self->{device} );
+    # $fn->( $self->{device} );
 }
 
 1;
 
 __END__
 
-=head1 TODO
+=head1 KNOWN ISSUES
 
-=head2 Deprecate the dragon
-
-The callback mechanism for handling incoming events is useful. It would be nice
-if it were more robust.
+Use of L<MIDI::Event> is a bit of a hack for convenience, exploiting the
+similarity of realtime MIDI messages and MIDI song file messages. It may break
+in unexpected ways if used for large SysEx messages or other "non-music"
+events, though should be fine for encoding and decoding note, pitch, aftertouch
+and CC messages.
 
 =head1 SEE ALSO
 

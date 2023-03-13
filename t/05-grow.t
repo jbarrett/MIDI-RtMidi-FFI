@@ -2,6 +2,7 @@ use strict;
 use warnings;
 
 use Test2::V0;
+use Test::MemoryGrowth;
 use Test::Lib;
 use Time::HiRes qw/ usleep /;
 
@@ -26,13 +27,19 @@ subtest event => sub {
 
     connect_devices( $in, $out );
 
-    for my $event ( @events ) {
-        $out->send_event( @{ $event } );
-        usleep 1000;
-        my $inevent = $in->get_event;
-        is( $event, $inevent, 'Event round-trip ok for ' . $event->[0] );
-    }
+    no_growth {
+        $out->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+        $in->get_message;
+    } 'Sending messages does not grow memory';
+
+    $in->set_callback( sub {} );
+
+    no_growth {
+        $out->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+        usleep 200;
+    } ( calls => 1000 ), 'Callback msgs do not grow memory';
 };
 
 done_testing;
+
 
