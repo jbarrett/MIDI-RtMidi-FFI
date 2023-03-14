@@ -10,7 +10,7 @@ package MIDI::RtMidi::FFI::Device;
 
     use MIDI::RtMidi::FFI::Device;
     
-    my $device = MIDI::RtMidi::FFI::Device->new;
+    my $device = RtMidiOut->new;
     $device->open_virtual_port( 'perl-rtmidi' );
     $device->send_event( note_on => 0x00, 0x40, 0x5a );
     sleep 1;
@@ -42,9 +42,13 @@ my $rtmidi_api_names = {
 
 =head2 new
 
-    my $device = MIDI::RtMidi::FFI::Device->new( %attributes );
+    my $device = MIDI::RtMidi::FFI::Device->new( %options );
+    my $midiin = RtMidiIn->new( %options );
+    my $midiout = RtMidiOut->new( %options );
 
-Returns a new MIDI::RtMidi::FFI::Device object. Valid attributes:
+Returns a new MIDI::RtMidi::FFI::Device object. RtMidiIn and RtMidiOut are
+provided as shorthand to instantiate devices of type 'in' and 'out'
+respectively. Valid attributes:
 
 =over 4
 
@@ -52,6 +56,8 @@ Returns a new MIDI::RtMidi::FFI::Device object. Valid attributes:
 
 B<type> -
 Device type : 'in' or 'out' (defaults to 'out')
+
+Ignored if instantiating RtMidiIn or RtMidiOut.
 
 =item *
 
@@ -351,9 +357,55 @@ Type 'in' only. Set message types to ignore.
 =cut
 
 sub ignore_types {
-    my ( $self, $sysex, $time, $sense ) = @_;
+    my ( $self, $sysex, $timing, $sensing ) = @_;
+    @{ $self }{ qw/ ignore_sysex ignore_timing ignore_sensing / } = ( $sysex, $timing, $sensing );
     croak "Unable to ignore_types for device type : $self->{type}" unless $self->{type} eq 'in';
-    rtmidi_in_ignore_types( $self->{device}, $sysex, $time, $sense );
+    rtmidi_in_ignore_types( $self->{device}, $sysex, $timing, $sensing );
+}
+
+=head2 ignore_sysex
+
+    $device->ignore_sysex( 1 );
+    $device->ignore_sysex( 0 );
+
+Type 'in' only. Set whether or not to ignore sysex messages.
+
+=cut
+
+sub ignore_sysex {
+    my ( $self, $ignore_sysex ) = @_;
+    $self->{ignore_sysex} = $ignore_sysex;
+    $self->ignore_types( @{ $self }{ qw/ ignore_sysex ignore_timing ignore_sensing / } )
+}
+
+=head2 ignore_timing
+
+    $device->ignore_timing( 1 );
+    $device->ignore_timing( 0 );
+
+Type 'in' only. Set whether or not to ignore timing messages.
+
+=cut
+
+sub ignore_timing {
+    my ( $self, $ignore_timing ) = @_;
+    $self->{ignore_timing} = $ignore_timing;
+    $self->ignore_types( @{ $self }{ qw/ ignore_sysex ignore_timing ignore_sensing / } )
+}
+
+=head2 ignore_sensing
+
+    $device->ignore_sensing( 1 );
+    $device->ignore_sensing( 0 );
+
+Type 'in' only. Set whether or not to ignore active sensing messages.
+
+=cut
+
+sub ignore_sensing {
+    my ( $self, $ignore_sensing ) = @_;
+    $self->{ignore_sensing} = $ignore_sensing;
+    $self->ignore_types( @{ $self }{ qw/ ignore_sysex ignore_timing ignore_sensing / } )
 }
 
 =head2 get_message
@@ -545,6 +597,24 @@ sub DESTROY {
     $self->cancel_callback;
     $self->close_port;
     # $fn->( $self->{device} );
+}
+
+{
+    package RtMidiIn;
+    use strict; use warnings;
+    sub new {
+        shift;
+        MIDI::RtMidi::FFI::Device->new( @_, type => 'in' );
+    }
+}
+
+{
+    package RtMidiOut;
+    use strict; use warnings;
+    sub new {
+        shift;
+        MIDI::RtMidi::FFI::Device->new( @_, type => 'out' );
+    }
 }
 
 1;
