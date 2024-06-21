@@ -900,6 +900,10 @@ configuration value messages, followed by an "End of RPN" message.
 This method starts a RPN message by selecting the parameter on a given
 channel.
 
+In the example code above, we are sending to parameter 2. This will result
+in a MSB value 0 on CC 101, and 2 on CC 100. This selects the
+"Channel Coarse tuning" parameter.
+
 =cut
 
 sub start_rpn {
@@ -953,7 +957,7 @@ Alias for L</set_rpn>
     $self->set_rpn_14( $channel, $param, @messages );
     $self->set_rpn_14( 0, 2, 0x2000 );
 
-As L</set_rpn>, but sends 14 bit messages.
+As L</set_rpn>, but expects 14 bit messages.
 
 =cut
 
