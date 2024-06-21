@@ -10,11 +10,28 @@ package MIDI::RtMidi::FFI::Device;
 
     use MIDI::RtMidi::FFI::Device;
     
+    # Create a new device instance
     my $device = RtMidiOut->new;
-    $device->open_virtual_port( 'perl-rtmidi' );
-    $device->send_event( note_on => 0x00, 0x40, 0x5a );
-    sleep 1;
-    $device->send_event( note_off => 0x00, 0x40, 0x5a );
+    
+    # Open a "virtual port" - this is a virtual MIDI device which may be
+    # connected to directly from external synths and software.
+    # This is unsupported on Windows.
+    $device->open_virtual_port( 'foo' );
+    
+    # An alternative to opening a virtual port is connecting to an available
+    # MIDI device on your system, such as a loopback device, or virtual or
+    # hardware synth. Your device must be connected to some sort of synth to
+    # make noise.
+    $device->open_port_by_name( qr/wavetable|loopmidi|timidity|dls/i )
+    
+    # Now that a port is open we can start to send MIDI messages, such as
+    # this annoying sequence
+    while ( 1 ) {
+        $device->note_on( 0x00, 0x40, 0x5a );
+        sleep 1;
+        $device->note_off( 0x00, 0x40 );
+        sleep 1;
+    }
 
 =head1 DESCRIPTION
 
@@ -554,6 +571,29 @@ This is no longer the case - channel should be provided where necessary.
 =cut
 
 *send_event = \&send_message_encoded;
+
+=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
+
+Wrapper methods for L</send_message_encoded>, e.g.
+
+    $device->note_on( 0x00, 0x40, 0x5a );
+
+is equivalent to:
+
+    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+
+=cut
+
+*note_off = sub { shift->send_event( note_off => @_ ) };
+*note_on = sub { shift->send_event( note_on => @_ ) };
+*control_change = sub { shift->send_event( control_change => @_ ) };
+*patch_change = sub { shift->send_event( patch_change => @_ ) };
+*key_after_touch = sub { shift->send_event( key_after_touch => @_ ) };
+*channel_after_touch = sub { shift->send_event( channel_after_touch => @_ ) };
+*pitch_wheel_change = sub { shift->send_event( pitch_wheel_change => @_ ) };
+*sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
+*sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
+*sysex = sub { shift->send_event( sysex => @_ ) };
 
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
