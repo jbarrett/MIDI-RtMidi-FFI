@@ -157,10 +157,12 @@ sub ptr  { $_[0]->{device}->ptr }
     $device->open_virtual_port( $name );
 
 Open a virtual device port. A virtual device may be connected to other MIDI
-software, just as with a hardware device.
+software, just as with a hardware device. The name is an arbitrary name of
+your choosing, though it is perhaps safest if you stick to plain ASCII for
+this.
 
 This method will not work on Windows. See L</Virtual Devices and Windows>
-for further details.
+for details and possible workarounds.
 
 =cut
 
@@ -173,7 +175,9 @@ sub open_virtual_port {
 
     $device->open_port( $port, $name );
 
-Open a port.
+Open a (numeric) port on a device, with given a name of your choosing.
+
+See L</open_port_by_name> for a potentially more flexible option.
 
 =cut
 
@@ -188,7 +192,7 @@ sub open_port {
     $device->get_ports_by_name( $name );
     $device->get_ports_by_name( qr/name/ );
 
-Returns a list of ports matching the supplied name criteria.
+Returns a list of port numbers matching the supplied name criteria.
 
 =cut
 
@@ -258,7 +262,7 @@ sub get_port_count {
 
     $self->get_port_name( $port );
 
-Returns the name of the supplied port number.
+Returns the corresponding device name for the supplied port number.
 
 =cut
 
