@@ -268,7 +268,9 @@ Returns the corresponding device name for the supplied port number.
 
 sub get_port_name {
     my ( $self, $port_number ) = @_;
-    rtmidi_get_port_name( $self->{device}, $port_number );
+    my $name = rtmidi_get_port_name( $self->{device}, $port_number );
+    $name =~ s/\0$//;
+    return $name;
 }
 
 =head2 get_current_api
