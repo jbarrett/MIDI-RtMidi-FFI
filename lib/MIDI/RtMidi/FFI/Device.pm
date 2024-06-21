@@ -832,6 +832,59 @@ An alias for control_change.
 
 *cc = \&control_change;
 
+=head2 send_cc_14
+
+    $device->send_cc_14( $channel, $controller, $value );
+    $device->send_cc_14( 0x01, 0x12, 0x3464 );
+
+Type 'out' only. Send a 14 bit Control Change message to a Continuous
+Comtroller (CC). 14 bit messages may only be sent to the first 32 CCs and must
+be supported by the receiving instrument.
+
+I<Implementation note>: 14 bit Control Change is sent as a pair of 7 bit
+Control Change messages, in big endian order - that is, the MSB (most
+significant byte) is sent first, and LSB (least significant byte) follows. The
+MSB is sent to a controller between 0-31, LSB is sent to that controller + 32,
+e.g. MSB is sent to controller 6, LSB to controller 38.
+
+While the MIDI 1.0 Detail Specification states: I<"
+If both the MSB and LSB are sent initially, a subsequent fine adjustment only
+requires the sending of the LSB. The MSB does not have to be retransmitted.
+If a subsequent major adjustment is necessary the MSB must be transmitted
+again.
+">,
+this method sends the complete pair of messages for each call. The first reason
+for this is some MIDI systems allow for multiple connections to a device -
+there is no guarantee that the coarse control message has not been overridden
+by the time additional fine control messages are sent. The second is it's
+simpler for me to implement 😀
+
+There may be devices which deviate from this spec. In this case, it should be
+trivial to roll your own 14 bit CC implementation targeting your device,
+though you will need to know the correct order for both the CC and value.
+
+For example, if your device expects the LSB message first on the "high"
+controller, you could:
+
+    $self->send_event( control_change => $channel +32, $controller, $value & 0x7F );
+    $self->send_event( control_change => $channel, $controller, $value >> 7 );
+
+=cut
+
+sub send_cc_14 {
+    my ( $self, $channel, $controller, $value ) = @_;
+    $self->send_event( control_change => $channel, $controller, $value >> 7 );
+    $self->send_event( control_change => $channel | 0x20, $controller, $value & 0x7F );
+}
+
+=head2 cc_14
+
+    Alias for L</send_cc_14>
+
+=cut
+
+*cc_14 = \&send_cc_14;
+
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
 
