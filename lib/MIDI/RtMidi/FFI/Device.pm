@@ -979,6 +979,94 @@ Alias for L</set_rpn_14>
 
 *rpn_14 = \&set_rpn_14;
 
+
+=head2 start_nrpn
+
+    $self->start_nrpn( $channel, $param );
+    $self->start_nrpn( 1, 2 );
+    # Send NRPN parameter values here on CC 6/38
+
+Non-Registered Parameter Numbers (NRPN) are much like RPNs, but are
+manufacturer specific - there is no single set of standard NRPN messages.
+
+The complete NRPN message consists of parameter selection messages,
+configuration value messages, followed by an "End of RPN" message.
+"End of RPN" is used for both RPN and NRPN.
+
+This method starts a NRPN message by selecting the parameter on a given
+channel.
+
+=cut
+
+sub start_nrpn {
+    my ( $self, $channel, $param ) = @_;
+    $self->send_event( control_change => $channel, 99, $param >> 7 );
+    $self->send_event( control_change => $channel, 98, $param & 0x7F );
+}
+
+=head2 end_nrpn
+
+    $self->end_nrpn( $channel );
+    $self->end_nrpn( 1 );
+
+Send the "End of RPN" message - this is an alias for end_rpn.
+
+=cut
+
+*end_nrpn = \&end_rpn;
+
+=head2 set_nrpn
+
+    $self->set_nrpn( $channel, $param, @messages );
+    $self->set_nrpn( 0, 2, 0x40 );
+
+Sets a NRPN parameter with 7 bit messages. This method sends a complete NRPN
+message, including start and end messages.
+
+=cut
+
+sub send_nrpn {
+    my ( $self, $channel, $param, @messages ) = @_;
+    $self->start_nrpn( $channel, $param );
+    $self->send_event( control_change => $channel, 6, $_ ) for @messages;
+    $self->end_nrpn( $channel );
+}
+
+=head2 nrpn
+
+Alias for L</set_nrpn>
+
+=cut
+
+*nrpn = \&set_nrpn;
+
+=head2 set_nrpn_14
+
+    $self->set_nrpn_14( $channel, $param, @messages );
+    $self->set_nrpn_14( 0, 2, 0x2000 );
+
+As L</set_nrpn>, but sends 14 bit messages.
+
+=cut
+
+sub send_nrpn_14 {
+    my ( $self, $channel, $param, @messages ) = @_;
+    $self->start_nrpn( $channel, $param );
+    for my $msg ( @messages ) {
+        $self->send_event( control_change => $channel, 6, $msg >> 7 );
+        $self->send_event( control_change => $channel, 38, $msg & 0x07 );
+    }
+    $self->end_nrpn( $channel );
+}
+
+=head2 nrpn_14
+
+Alias for L</set_nrpn_14>
+
+=cut
+
+*nrpn_14 = \&set_nrpn_14;
+
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
 
