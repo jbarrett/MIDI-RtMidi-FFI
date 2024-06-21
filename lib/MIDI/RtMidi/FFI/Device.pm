@@ -597,6 +597,14 @@ is equivalent to:
 *sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
 *sysex = sub { shift->send_event( sysex => @_ ) };
 
+=head2 cc
+
+An alias for control_change.
+
+=cut
+
+*cc = \&control_change;
+
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
 
