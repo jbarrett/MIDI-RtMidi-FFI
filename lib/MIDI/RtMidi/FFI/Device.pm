@@ -232,6 +232,37 @@ sub open_port_by_name {
     }
 }
 
+=head2 get_all_port_nums
+
+    $device->get_all_port_nums();
+
+Return a hashref of available devices the form { port number => port name }
+
+=cut
+
+sub get_all_port_nums {
+    my ( $self ) = @_;
+    +{
+        map { $_ => $self->get_port_name( $_ ) }
+        0..$self->get_port_count-1
+    };
+}
+
+=head2 get_all_port_names
+
+    $device->get_all_port_names();
+
+Return a hashref of available devices of the form { port name => port number }
+
+=cut
+
+sub get_all_port_names {
+    my ( $self ) = @_;
+    +{
+        reverse %{ $self->get_all_port_nums }
+    }
+}
+
 =head2 close_port
 
     $device->close_port();
