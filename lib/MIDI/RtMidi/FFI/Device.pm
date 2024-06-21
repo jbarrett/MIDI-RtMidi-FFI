@@ -156,9 +156,11 @@ sub ptr  { $_[0]->{device}->ptr }
 
     $device->open_virtual_port( $name );
 
-Open a virtual device port. A virtual device may be connected to other MIDI software, just as with a hardware device.
+Open a virtual device port. A virtual device may be connected to other MIDI
+software, just as with a hardware device.
 
-This method will not work on Windows.
+This method will not work on Windows. See L</Virtual Devices and Windows>
+for further details.
 
 =cut
 
@@ -660,6 +662,39 @@ sub DESTROY {
 1;
 
 __END__
+
+=head1 Virtual Devices and Windows
+
+Windows currently (as of June 2024) lacks built-in support for on-the-fly
+creation of virtual MIDI devices. While
+L<Windows MIDI Services|https://microsoft.github.io/MIDI/>
+will offer dynamic virtual loopback, alongside MIDI 2.0 support, it is a
+work in progress.
+
+This situation has resulted in some confusion, and a number of solutions
+exist to work around the issue. Virtual loopback drivers allow for the
+creation of external ports which may be connected to by each participant
+in the MIDI conversation.
+
+Rather than create a virtual port, you connect your Perl code to a
+virtual loopback device, and connect your DAW or synth to the other side
+of the loopback device.
+
+The best currently working virtual loopback drivers based on my research are:
+
+L<loopMIDI|https://www.tobias-erichsen.de/software/loopmidi.html> by
+Tobias Erichsen
+
+L<Sbvmidi|https://springbeats.com/sbvmidi/> by Springbeats
+
+L<LoopBe|https://www.nerds.de/en/loopbe1.html> by nerds.de
+
+In my own experience loopMIDI is the simplest and most flexible option,
+allowing for arbitrary numbers of devices.
+
+You should review the licensing terms of any software you choose to
+incorporate into your projects to ensure it is appropriate for your use case.
+Each of the above is free for personal, non-commercial use.
 
 =head1 KNOWN ISSUES
 
