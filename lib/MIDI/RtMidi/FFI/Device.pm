@@ -1198,6 +1198,8 @@ L<MIDI::RtMidi::FFI>
 
 L<MIDI::Event>
 
+L<Phil Rees Music Tech page on NRPN/RPN|http://www.philrees.co.uk/nrpnq.htm>
+
 =head1 CONTRIBUTING
 
 L<https://github.com/jbarrett/MIDI-RtMidi-FFI>
