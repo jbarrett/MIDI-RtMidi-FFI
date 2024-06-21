@@ -88,7 +88,7 @@ BEGIN {
         RTMIDI_API_NUM          => 6,
     };
 
-    # These changes are not reflected in the RtMidi C header
+    # These changes are not reflected in the RtMidi C header in v5
     # This ordering reflects the C++ enum order
     my $enum_RtMidiApi_5 = {
         %{ $enum_RtMidiApi_4 },
@@ -97,9 +97,17 @@ BEGIN {
         RTMIDI_API_NUM          => 7,
     };
 
-    $enum_RtMidiApi = $version ge '5.0.0'
-        ? $enum_RtMidiApi_5
-        : $enum_RtMidiApi_4;
+    my $enum_RtMidiApi_6 = {
+        %{ $enum_RtMidiApi_4 },
+        RTMIDI_API_WEB_MIDI_API => 6,
+        RTMIDI_API_WINDOWS_UWP  => 7,
+        RTMIDI_API_ANDROID      => 8,
+        RTMIDI_API_NUM          => 9,
+    };
+
+    $enum_RtMidiApi = $enum_RtMidiApi_4;
+    $enum_RtMidiApi = $enum_RtMidiApi_5 if $version ge '5.0.0';
+    $enum_RtMidiApi = $enum_RtMidiApi_6 if $version ge '6.0.0';
 
     $enum_RtMidiErrorType = {
         RTMIDI_ERROR_WARNING           => 0,
