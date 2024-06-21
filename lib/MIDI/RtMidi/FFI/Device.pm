@@ -885,6 +885,96 @@ sub send_cc_14 {
 
 *cc_14 = \&send_cc_14;
 
+=head2 start_rpn
+
+    $self->start_rpn( $channel, $param );
+    $self->start_rpn( 1, 2 );
+    # Send RPN parameter values here on CC 6/38
+
+Registered Parameter Numbers (RPN), where supported, allow for configuration of
+parameters such as tuning and pitch bend range.
+
+The complete RPN message consists of parameter selection messages,
+configuration value messages, followed by an "End of RPN" message.
+
+This method starts a RPN message by selecting the parameter on a given
+channel.
+
+=cut
+
+sub start_rpn {
+    my ( $self, $channel, $param ) = @_;
+    $self->send_event( control_change => $channel, 101, $param >> 7 );
+    $self->send_event( control_change => $channel, 100, $param & 0x7F );
+}
+
+=head2 end_rpn
+
+    $self->end_rpn( $channel );
+    $self->end_rpn( 1 );
+
+Send the "End of RPN" message.
+
+=cut
+
+sub end_rpn {
+    my ( $self, $channel ) = @_;
+    $self->send_event( control_change => $channel, 101, 0x7F );
+    $self->send_event( control_change => $channel, 100, 0x7F );
+}
+
+=head2 set_rpn
+
+    $self->set_rpn( $channel, $param, @messages );
+    $self->set_rpn( 0, 2, 0x40 );
+
+Sets a RPN parameter with 7 bit messages. This method sends a complete RPN
+message, including start and end messages.
+
+=cut
+
+sub send_rpn {
+    my ( $self, $channel, $param, @messages ) = @_;
+    $self->start_rpn( $channel, $param );
+    $self->send_event( control_change => $channel, 6, $_ ) for @messages;
+    $self->end_rpn( $channel );
+}
+
+=head2 rpn
+
+Alias for L</set_rpn>
+
+=cut
+
+*rpn = \&set_rpn;
+
+=head2 set_rpn_14
+
+    $self->set_rpn_14( $channel, $param, @messages );
+    $self->set_rpn_14( 0, 2, 0x2000 );
+
+As L</set_rpn>, but sends 14 bit messages.
+
+=cut
+
+sub send_rpn_14 {
+    my ( $self, $channel, $param, @messages ) = @_;
+    $self->start_rpn( $channel, $param );
+    for my $msg ( @messages ) {
+        $self->send_event( control_change => $channel, 6, $msg >> 7 );
+        $self->send_event( control_change => $channel, 38, $msg & 0x07 );
+    }
+    $self->end_rpn( $channel );
+}
+
+=head2 rpn_14
+
+Alias for L</set_rpn_14>
+
+=cut
+
+*rpn_14 = \&set_rpn_14;
+
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
 
