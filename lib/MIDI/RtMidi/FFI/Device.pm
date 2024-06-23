@@ -55,6 +55,21 @@ my $rtmidi_api_names = {
     dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ]
 };
 
+my $byte_lookup = {
+    0xF1 => 'timecode',
+    0xF2 => 'song_position_pointer',
+    0xF3 => 'song_select',
+    0xF6 => 'tune_request',
+    0xF8 => 'clock',
+    0xFA => 'start',
+    0xFB => 'continue',
+    0xFC => 'stop',
+    0xFE => 'active_sensing',
+    0xFF => 'system_reset',
+};
+
+my $function_lookup = { reverse %{ $byte_lookup } };
+
 =head1 METHODS
 
 =head2 new
@@ -518,10 +533,18 @@ sub decode_message {
     my ( $self, $msg ) = @_;
     return unless $msg;
 
+    my $decoded;
+    my @bytes = unpack 'C*', $msg;
+    my $function = shift @bytes;
+    if ( my $function_name = $byte_lookup->{ $function } ) {
+        $decoded = [ $function_name, @bytes ];
+        goto return_decoded;
+    }
+
     # Real-time messages don't have 'dtime', but MIDI::Event expects it:
     $msg = chr(0) . $msg;
 
-    my $decoded = MIDI::Event::decode( \$msg )->[0];
+    $decoded = MIDI::Event::decode( \$msg )->[0];
 
     if ( ref $decoded ne 'ARRAY' ) {
         warn "Could not decode message " . unpack( 'H*', $msg );
@@ -531,6 +554,7 @@ sub decode_message {
     # Delete dtime
     splice( @{ $decoded }, 1, 1 );
 
+return_decoded:
     $decoded->[0] = 'note_off' if ( $decoded->[0] eq 'note_on' && $decoded->[-1] == 0 );
     return wantarray
         ? @{ $decoded }
