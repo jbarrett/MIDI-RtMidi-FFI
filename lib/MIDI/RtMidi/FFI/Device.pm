@@ -57,9 +57,6 @@ my $rtmidi_api_names = {
 
 my $byte_lookup = {
     0xF1 => 'timecode',
-    0xF2 => 'song_position_pointer',
-    0xF3 => 'song_select',
-    0xF6 => 'tune_request',
     0xF8 => 'clock',
     0xFA => 'start',
     0xFB => 'continue',
@@ -523,9 +520,57 @@ removed.
 
     $device->decode_message( $msg );
 
-Attempts to decode the passed message with L<Midi::Event>. Decoded messages
-should match the events listed in MIDI::Event documentation, except without
-dtime.
+Decodes the passed MIDI byte string. Some messages, such as clock control,
+may be decoded by this module. The most common mesage types are passed
+through to L<Midi::Event>.
+
+The most common message types are:
+
+=over
+
+=item ('note_off', I<channel>, I<note>, I<velocity>)
+
+=item ('note_on', I<channel>, I<note>, I<velocity>)
+
+=item ('key_after_touch', I<channel>, I<note>, I<velocity>)
+
+=item ('control_change', I<channel>, I<controller(0-127)>, I<value(0-127)>)
+
+=item ('patch_change', I<channel>, I<patch>)
+
+=item ('channel_after_touch', I<channel>, I<velocity>)
+
+=item ('pitch_wheel_change', I<channel>, I<pitch_wheel>)
+
+=item ('sysex_f0', I<raw>)
+
+=item ('sysex_f7', I<raw>)
+
+=back
+
+Additional message types handled by this module are:
+
+=over
+
+=item ('timecode', I<rate_and_hour>, I<minute>, I<second>, I<frame> )
+
+=item ('clock')
+
+=item ('start')
+
+=item ('continue')
+
+=item ('stop')
+
+=item ('active_sensing')
+
+=item ('system_reset')
+
+=back
+
+See L<Midi::Event> documentation for details on other events handled by
+that module, though keep in mind that a realtime message will not have the
+I<dtime> parameter.
 
 =cut
 
@@ -580,9 +625,11 @@ sub send_message {
     my $msg = $device->encode_message( note_on => 0x00, 0x40, 0x5a )
     $device->send_message( $msg );
 
-Attempts to encode the passed message with L<MIDI::Event>.
-The specification for events is the same as those listed in MIDI::Event's
-documentation, except dtime should be omitted.
+Attempts to encode the passed message with L<MIDI::Event> or message
+handling within this module. See L</decode_message> for some common
+supported message types.
+
+The event name 'sysex' is an alias for 'sysex_f0'.
 
 =cut
 
@@ -591,10 +638,16 @@ sub encode_message {
 
     $event[0] = 'sysex_f0' if $event[0] eq 'sysex';
 
+    my $msg;
+    if ( $function_lookup->{ $event[0] } ) {
+        $msg = \pack( 'C*', $function_lookup->{ shift @event }, @event );
+        goto return_msg;
+    }
+
     # Insert 0 dtime
     splice @event, 1, 0, 0;
 
-    my $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
+    $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
 
     # Strip dtime before send
     substr( $$msg, 0, 1 ) = '';
@@ -605,6 +658,7 @@ sub encode_message {
         $$msg .= chr( 0xf7 );
     }
 
+return_msg:
     return $$msg;
 }
 
