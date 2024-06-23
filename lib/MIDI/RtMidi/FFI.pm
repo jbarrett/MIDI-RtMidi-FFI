@@ -33,7 +33,7 @@ sub _load_rtmidi {
     $ffi = FFI::Platypus->new(
         api => 2,
         lib => [
-            $ENV{__PERL5_RTMIDI_FFI_TEST_LIBRARY_PATH__} # facilitate testing across versions
+            $ENV{__PERL5_RTMIDI_FFI_TEST_LIBRARY_PATH__} # facilitate testing across rtmidi versions
               ? $ENV{__PERL5_RTMIDI_FFI_TEST_LIBRARY_PATH__}
               : find_lib_or_exit(
                   lib   => 'rtmidi',
@@ -57,13 +57,13 @@ sub _init_api {
 }
 
 my $rtmidi_version;
-# Guesswork to derive major version - RtMidi::getVersion is not exposed in C API
+# Guesswork to derive major version - RtMidi::getVersion is not exposed
+# in C API in versions < 6
 sub rtmidi_get_version {
     return $rtmidi_version if $rtmidi_version;
 
     return $rtmidi_version = '3.0.0' unless $ffi->find_symbol('rtmidi_api_display_name');
 
-    # specalutive, PR open ...
     return $rtmidi_version = $ffi->function( rtmidi_get_version => [] => 'string' )->()
         if ( $ffi->find_symbol('rtmidi_get_version') );
 
