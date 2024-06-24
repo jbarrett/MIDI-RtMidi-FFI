@@ -832,7 +832,7 @@ controller, you could:
 sub send_cc_14 {
     my ( $self, $channel, $controller, $value ) = @_;
     $self->send_event( control_change => $channel, $controller, $value >> 7 );
-    $self->send_event( control_change => $channel | 0x20, $controller, $value & 0x7F );
+    $self->send_event( control_change => $channel , $controller | 0x20 , $value & 0x7F );
 }
 
 =head2 cc_14
