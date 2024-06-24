@@ -805,7 +805,7 @@ significant byte) is sent first, and LSB (least significant byte) follows. The
 MSB is sent to a controller between 0-31, LSB is sent to that controller + 32,
 e.g. MSB is sent to controller 6, LSB to controller 38.
 
-While the MIDI 1.0 Detail Specification states: I<"
+While the MIDI 1.0 Detailed Specification states: I<"
 If both the MSB and LSB are sent initially, a subsequent fine adjustment only
 requires the sending of the LSB. The MSB does not have to be retransmitted.
 If a subsequent major adjustment is necessary the MSB must be transmitted
