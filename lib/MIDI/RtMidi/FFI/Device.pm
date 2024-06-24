@@ -60,7 +60,8 @@ is, you may not simply connect RtMidi to another piece of software without a
 virtual or loopback device in between, e.g. via the L</open_virtual_port>
 method. RtMidi may talk to connected physical devices directly, without the use
 of a virtual device. The same is true of any software-defined virtual or
-loopback devices external to your software.
+loopback devices external to your software, RtMidi may connect directly to
+these.
 
 "Virtual device" and "virtual port" are effectively interchangeable
 terms when using RtMidi - each
@@ -119,6 +120,56 @@ my $byte_lookup = {
 
 my $function_lookup = { reverse %{ $byte_lookup } };
 
+# Only send MSB when it changes, according to MIDI 1.0 detailed spec.
+sub _midi_1_0_encode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    my $msb = $value >> 7 & 0x7F;
+    my $lsb = $value & 0x7F;
+    my $prev = \$self->{ enc_prev_cc }->[ $channel ]->[ $controller ];
+    if ( defined $$prev && $$prev != $msb ) {
+        $$prev = $msb;
+        $self->_send_message_encoded( control_change => $channel, $controller, $msb );
+    }
+    $self->_send_message_encoded( control_change => $channel, $controller | 0x20 , $lsb );
+}
+
+# Send MSB/LSB pair each time
+sub _pair_encode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    $self->_send_message_encoded( control_change => $channel, $controller, $value >> 7 & 0x7F );
+    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value & 0x7F );
+}
+
+# Send MSB/LSB pair each time, LSB first
+sub _backwards_encode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value & 0x7F );
+    $self->_send_message_encoded( control_change => $channel, $controller, $value >> 7 & 0x7F );
+}
+
+# Send MSB/LSB pair each time, MSB first on high channel no.
+sub _doubleback_encode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value >> 7 & 0x7F );
+    $self->_send_message_encoded( control_change => $channel, $controller, $value & 0x7F );
+}
+
+# Send MSB/LSB pair each time, MSB last on high channel no.
+sub _bassack_encode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    $self->_send_message_encoded( control_change => $channel, $controller, $value & 0x7F );
+    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value >> 7 & 0x7F );
+}
+
+my $cc_encode = {
+    midi       => \&_midi_1_0_encode_cc,
+    pair       => \&_pair_encode_cc,
+    backwards  => \&_backwards_encode_cc,
+    doubleback => \&_doubleback_encode_cc,
+    bassack    => \&_bassack_encode_cc,
+    await      => \&_midi_1_0_encode_cc,
+};
+
 =head1 METHODS
 
 =head2 new
@@ -164,6 +215,12 @@ Device name
 B<queue_size_limit> -
 (Type 'in' only) The buffer size to allocate for queueing incoming messages
 (defaults to 1024)
+
+=item *
+
+B<14bit_mode> -
+Sets 14-bit control change behaviour. One of 'midi', 'pair', 'backwards',
+'doubleback', 'bassack', 'await'
 
 =item *
 
@@ -561,8 +618,7 @@ sub get_message_decoded {
 Alias for L</get_message_decoded>, for backwards compatibility.
 
 B<NB> Previous versions of this call spliced out the channel portion of the
-message. This is no longer the case. The dtime (or delta-time) portion is still
-removed.
+message. This is no longer the case.
 
 =cut
 
@@ -736,16 +792,29 @@ return_msg:
 
     $device->send_message_encoded( @event );
     # Event, channel, note, velocity
-    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5A );
+    $device->send_message_encoded( control_change => 0x01, 0x1F, 0x3F7F );
     $device->send_message_encoded( sysex => "Hello, computer?" );
 
 Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 
 =cut
 
-sub send_message_encoded {
+sub _send_message_encoded {
     my ( $self, @event ) = @_;
     $self->send_message( $self->encode_message( @event ) );
+}
+
+sub send_message_encoded {
+    my ( $self, @event ) = @_;
+    if ( $event[0] eq 'control_change' ) {
+        if ( $event[2] < 32 && $self->{ '14bit_mode' } ) {
+            my $method = $cc_encode->{ $self->{ '14bit_mode' } };
+            croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }" unless $method;
+            return $method->( $self, @event );
+        }
+    }
+    $self->_send_message_encoded( @event );
 }
 
 =head2 send_event
@@ -782,11 +851,12 @@ sub panic {
     $device->PANIC( $channel );
     $device->PANIC( 0x00 );
 
-Send 'note_off' to all notes on the specified channel.
+Send 'note_off' to all 128 notes on the specified channel.
 If no channel is specified, the message is sent to all channels.
 
 B<Warning:> This method has the potential to flood buffers!
-It should be a recourse of last resort.
+It should be a recourse of last resort - consider L</panic>,
+it'll probably work.
 
 =cut
 
