@@ -759,48 +759,6 @@ This is no longer the case - channel should be provided where necessary.
 
 *send_event = \&send_message_encoded;
 
-=head2 panic
-
-    $device->panic( $channel );
-    $device->panic( 0x00 );
-
-Send an "All MIDI notes off" (CC 123) message to the specified channel.
-If no channel is specified, the message is sent to all channels.
-
-=cut
-
-sub panic {
-    my ( $self, $channel ) = @_;
-    my @channels = defined $channel
-        ? ( $channel )
-        : ( 0..15 );
-    $self->cc( 123, $_, 0 ) for @channels;
-}
-
-=head2 PANIC
-
-    $device->PANIC( $channel );
-    $device->PANIC( 0x00 );
-
-Send 'note_off' to all notes on the specified channel.
-If no channel is specified, the message is sent to all channels.
-
-B<Warning:> This method has the potential to flood buffers!
-It should be a recourse of last resort.
-
-=cut
-
-sub PANIC {
-    my ( $self, $channel ) = @_;
-    my @channels = defined $channel
-        ? ( $channel )
-        : ( 0..15 );
-    for my $ch ( @channels ) {
-        $self->note_off( $ch, $_ ) for 0..127;
-    }
-}
-
-
 =head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
 
 Wrapper methods for L</send_message_encoded>, e.g.
@@ -1066,6 +1024,48 @@ Alias for L</set_nrpn_14>
 =cut
 
 *nrpn_14 = \&set_nrpn_14;
+
+=head2 panic
+
+    $device->panic( $channel );
+    $device->panic( 0x00 );
+
+Send an "All MIDI notes off" (CC 123) message to the specified channel.
+If no channel is specified, the message is sent to all channels.
+
+=cut
+
+sub panic {
+    my ( $self, $channel ) = @_;
+    my @channels = defined $channel
+        ? ( $channel )
+        : ( 0..15 );
+    $self->cc( 123, $_, 0 ) for @channels;
+}
+
+=head2 PANIC
+
+    $device->PANIC( $channel );
+    $device->PANIC( 0x00 );
+
+Send 'note_off' to all notes on the specified channel.
+If no channel is specified, the message is sent to all channels.
+
+B<Warning:> This method has the potential to flood buffers!
+It should be a recourse of last resort.
+
+=cut
+
+sub PANIC {
+    my ( $self, $channel ) = @_;
+    my @channels = defined $channel
+        ? ( $channel )
+        : ( 0..15 );
+    for my $ch ( @channels ) {
+        $self->note_off( $ch, $_ ) for 0..127;
+    }
+}
+
 
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
