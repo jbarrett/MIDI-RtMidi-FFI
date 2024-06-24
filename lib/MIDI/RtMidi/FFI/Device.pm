@@ -596,6 +596,9 @@ sub decode_message {
         goto return_decoded;
     }
 
+    # Work around MIDI::Event failure to decode short messages
+    $msg .= chr(0) if length $msg < 3;
+
     # Real-time messages don't have 'dtime', but MIDI::Event expects it:
     $msg = chr(0) . $msg;
 
