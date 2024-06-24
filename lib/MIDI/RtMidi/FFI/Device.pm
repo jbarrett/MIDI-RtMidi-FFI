@@ -10,16 +10,82 @@ package MIDI::RtMidi::FFI::Device;
 
     use MIDI::RtMidi::FFI::Device;
     
+    # Create a new device instance
     my $device = RtMidiOut->new;
-    $device->open_virtual_port( 'perl-rtmidi' );
-    $device->send_event( note_on => 0x00, 0x40, 0x5a );
-    sleep 1;
-    $device->send_event( note_off => 0x00, 0x40, 0x5a );
+    
+    # Open a "virtual port" - this is a virtual MIDI device which may be
+    # connected to directly from external synths and software.
+    # This is unsupported on Windows.
+    $device->open_virtual_port( 'foo' );
+    
+    # An alternative to opening a virtual port is connecting to an available
+    # MIDI device on your system, such as a loopback device, or virtual or
+    # hardware synth. Your device must be connected to some sort of synth to
+    # make noise.
+    $device->open_port_by_name( qr/wavetable|loopmidi|timidity|dls/i );
+    
+    # Now that a port is open we can start to send MIDI messages, such as
+    # this annoying sequence
+    while ( 1 ) {
+        # Send Middle C (0x3C) to channel 0, strong velocity (0x7A)
+        $device->note_on( 0x00, 0x3C, 0x7A );
+        
+        # Send a random control change value to Channel 0, CC 1
+        $device->cc( 0x00, 0x01, int rand( 128 ) );
+        
+        sleep 1;
+        
+        # Stop playing Middle C on channel 0
+        $device->note_off( 0x00, 0x40 );
+        
+        sleep 1;
+    }
 
 =head1 DESCRIPTION
 
 MIDI::RtMidi::FFI::Device is an OO interface for L<MIDI::RtMidi::FFI> to help
 you manage devices, ports and MIDI events.
+
+=cut
+
+=head2 Some MIDI Terms
+
+There are terms specific to MIDI which are somewhat overloaded by this
+interface. I will try to disambiguate them here.
+
+=head3 Device
+
+A MIDI device, virtual or physical, is required to mediate MIDI messages.  That
+is, you may not simply connect RtMidi to another piece of software without a
+virtual or loopback device in between, e.g. via the L</open_virtual_port>
+method. RtMidi may talk to connected physical devices directly, without the use
+of a virtual device. The same is true of any software-defined virtual or
+loopback devices external to your software.
+
+"Virtual device" and "virtual port" are effectively interchangeable
+terms when using RtMidi - each
+MIDI::RtMidi::FFI::Device may represent a single input or output port,
+so any virtual device instantiated has a single virtual port.
+
+See L</Virtual Devices and Windows> for caveats and workarounds for virtual
+device support on that platform.
+
+=head3 Port
+
+Every MIDI device has at least one port for Input and/or Output.
+In hardware, connections between ports are usually 1:1. Some software
+implementations allow for multiple connections to a port.
+
+There is a special Output device usually called "MIDI Thru" or
+"MIDI Through" which mirrors every message sent to a given Input port.
+
+=head3 Channel
+
+Each port has 16 channels, numbered 0-15, which are used to route messages
+to specific instruments, modules or effects.
+
+Channel must be specified in any message related to performance, such as
+"note on" or "control change".
 
 =cut
 
@@ -37,6 +103,18 @@ my $rtmidi_api_names = {
     winmm       => [ "Windows MultiMedia", RTMIDI_API_WINDOWS_MM ],
     dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ]
 };
+
+my $byte_lookup = {
+    0xF1 => 'timecode',
+    0xF8 => 'clock',
+    0xFA => 'start',
+    0xFB => 'continue',
+    0xFC => 'stop',
+    0xFE => 'active_sensing',
+    0xFF => 'system_reset',
+};
+
+my $function_lookup = { reverse %{ $byte_lookup } };
 
 =head1 METHODS
 
@@ -139,9 +217,13 @@ sub ptr  { $_[0]->{device}->ptr }
 
     $device->open_virtual_port( $name );
 
-Open a virtual device port. A virtual device may be connected to other MIDI software, just as with a hardware device.
+Open a virtual device port. A virtual device may be connected to other MIDI
+software, just as with a hardware device. The name is an arbitrary name of
+your choosing, though it is perhaps safest if you stick to plain ASCII for
+this.
 
-This method will not work on Windows.
+This method will not work on Windows. See L</Virtual Devices and Windows>
+for details and possible workarounds.
 
 =cut
 
@@ -154,7 +236,9 @@ sub open_virtual_port {
 
     $device->open_port( $port, $name );
 
-Open a port.
+Open a (numeric) port on a device, with given a name of your choosing.
+
+See L</open_port_by_name> for a potentially more flexible option.
 
 =cut
 
@@ -169,7 +253,7 @@ sub open_port {
     $device->get_ports_by_name( $name );
     $device->get_ports_by_name( qr/name/ );
 
-Returns a list of ports matching the supplied name criteria.
+Returns a list of port numbers matching the supplied name criteria.
 
 =cut
 
@@ -209,6 +293,37 @@ sub open_port_by_name {
     }
 }
 
+=head2 get_all_port_nums
+
+    $device->get_all_port_nums();
+
+Return a hashref of available devices the form { port number => port name }
+
+=cut
+
+sub get_all_port_nums {
+    my ( $self ) = @_;
+    +{
+        map { $_ => $self->get_port_name( $_ ) }
+        0..$self->get_port_count-1
+    };
+}
+
+=head2 get_all_port_names
+
+    $device->get_all_port_names();
+
+Return a hashref of available devices of the form { port name => port number }
+
+=cut
+
+sub get_all_port_names {
+    my ( $self ) = @_;
+    +{
+        reverse %{ $self->get_all_port_nums }
+    }
+}
+
 =head2 close_port
 
     $device->close_port();
@@ -239,18 +354,20 @@ sub get_port_count {
 
     $self->get_port_name( $port );
 
-Returns the name of the supplied port number.
+Returns the corresponding device name for the supplied port number.
 
 =cut
 
 sub get_port_name {
     my ( $self, $port_number ) = @_;
-    rtmidi_get_port_name( $self->{device}, $port_number );
+    my $name = rtmidi_get_port_name( $self->{device}, $port_number );
+    $name =~ s/\0$//;
+    return $name;
 }
 
 =head2 get_current_api
 
-    $self->get_current_api();
+    $device->get_current_api();
 
 Returns the MIDI API in use for the device.
 
@@ -452,9 +569,57 @@ removed.
 
     $device->decode_message( $msg );
 
-Attempts to decode the passed message with L<Midi::Event>. Decoded messages
-should match the events listed in MIDI::Event documentation, except without
-dtime.
+Decodes the passed MIDI byte string. Some messages, such as clock control,
+may be decoded by this module. The most common mesage types are passed
+through to L<Midi::Event>.
+
+The most common message types are:
+
+=over
+
+=item ('note_off', I<channel>, I<note>, I<velocity>)
+
+=item ('note_on', I<channel>, I<note>, I<velocity>)
+
+=item ('key_after_touch', I<channel>, I<note>, I<velocity>)
+
+=item ('control_change', I<channel>, I<controller(0-127)>, I<value(0-127)>)
+
+=item ('patch_change', I<channel>, I<patch>)
+
+=item ('channel_after_touch', I<channel>, I<velocity>)
+
+=item ('pitch_wheel_change', I<channel>, I<pitch_wheel>)
+
+=item ('sysex_f0', I<raw>)
+
+=item ('sysex_f7', I<raw>)
+
+=back
+
+Additional message types handled by this module are:
+
+=over
+
+=item ('timecode', I<rate>, I<hour>, I<minute>, I<second>, I<frame> )
+
+=item ('clock')
+
+=item ('start')
+
+=item ('continue')
+
+=item ('stop')
+
+=item ('active_sensing')
+
+=item ('system_reset')
+
+=back
+
+See L<Midi::Event> documentation for details on other events handled by
+that module, though keep in mind that a realtime message will not have the
+I<dtime> parameter.
 
 =cut
 
@@ -462,19 +627,41 @@ sub decode_message {
     my ( $self, $msg ) = @_;
     return unless $msg;
 
+    my $decoded;
+    my @bytes = unpack 'C*', $msg;
+    my $function = shift @bytes;
+    if ( my $function_name = $byte_lookup->{ $function } ) {
+        if ( $function_name eq 'timecode' ) {
+            my $rate    = ( $bytes[0] & 0b1100000 ) >> 5;
+            my $hour    = $bytes[0] & 0b11111;
+            my $minute  = $bytes[1] & 0b111111;
+            my $second  = $bytes[2] & 0b111111;
+            my $frame   = $bytes[3] & 0b11111;
+            $decoded = [ $function_name, $rate, $hour, $minute, $second, $frame ];
+        }
+        else  {
+            $decoded = [ $function_name, @bytes ];
+        }
+        goto return_decoded;
+    }
+
+    # Work around MIDI::Event failure to decode short messages
+    $msg .= chr(0) if length $msg < 3;
+
     # Real-time messages don't have 'dtime', but MIDI::Event expects it:
     $msg = chr(0) . $msg;
 
-    my $decoded = MIDI::Event::decode( \$msg )->[0];
+    $decoded = MIDI::Event::decode( \$msg )->[0];
 
     if ( ref $decoded ne 'ARRAY' ) {
         warn "Could not decode message " . unpack( 'H*', $msg );
-        return;
+        return [ $function, @bytes ];
     }
 
     # Delete dtime
     splice( @{ $decoded }, 1, 1 );
 
+return_decoded:
     $decoded->[0] = 'note_off' if ( $decoded->[0] eq 'note_on' && $decoded->[-1] == 0 );
     return wantarray
         ? @{ $decoded }
@@ -500,9 +687,11 @@ sub send_message {
     my $msg = $device->encode_message( note_on => 0x00, 0x40, 0x5a )
     $device->send_message( $msg );
 
-Attempts to encode the passed message with L<MIDI::Event>.
-The specification for events is the same as those listed in MIDI::Event's
-documentation, except dtime should be omitted.
+Attempts to encode the passed message with L<MIDI::Event> or message
+handling within this module. See L</decode_message> for some common
+supported message types.
+
+The event name 'sysex' is an alias for 'sysex_f0'.
 
 =cut
 
@@ -511,10 +700,21 @@ sub encode_message {
 
     $event[0] = 'sysex_f0' if $event[0] eq 'sysex';
 
+    my $msg;
+    if ( $function_lookup->{ $event[0] } ) {
+        my $ev = $function_lookup->{ shift @event };
+        if ( $ev == 0xF1 ) { # timecode
+            my $rate = shift @event;
+            $event[0] = ( $rate << 5 ) | $event[0];
+        }
+        $msg = \pack( 'C*', $ev, @event );
+        goto return_msg;
+    }
+
     # Insert 0 dtime
     splice @event, 1, 0, 0;
 
-    my $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
+    $msg = MIDI::Event::encode( [\@event], { never_add_eot => 1 } );
 
     # Strip dtime before send
     substr( $$msg, 0, 1 ) = '';
@@ -525,6 +725,7 @@ sub encode_message {
         $$msg .= chr( 0xf7 );
     }
 
+return_msg:
     return $$msg;
 }
 
@@ -554,6 +755,79 @@ This is no longer the case - channel should be provided where necessary.
 =cut
 
 *send_event = \&send_message_encoded;
+
+=head2 panic
+
+    $device->panic( $channel );
+    $device->panic( 0x00 );
+
+Send an "All MIDI notes off" (CC 123) message to the specified channel.
+If no channel is specified, the message is sent to all channels.
+
+=cut
+
+sub panic {
+    my ( $self, $channel ) = @_;
+    my @channels = defined $channel
+        ? ( $channel )
+        : ( 0..15 );
+    $self->cc( 123, $_, 0 ) for @channels;
+}
+
+=head2 PANIC
+
+    $device->PANIC( $channel );
+    $device->PANIC( 0x00 );
+
+Send 'note_off' to all notes on the specified channel.
+If no channel is specified, the message is sent to all channels.
+
+B<Warning:> This method has the potential to flood buffers!
+It should be a recourse of last resort.
+
+=cut
+
+sub PANIC {
+    my ( $self, $channel ) = @_;
+    my @channels = defined $channel
+        ? ( $channel )
+        : ( 0..15 );
+    for my $ch ( @channels ) {
+        $self->note_off( $ch, $_ ) for 0..127;
+    }
+}
+
+
+=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
+
+Wrapper methods for L</send_message_encoded>, e.g.
+
+    $device->note_on( 0x00, 0x40, 0x5a );
+
+is equivalent to:
+
+    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+
+=cut
+
+*note_off = sub { shift->send_event( note_off => @_ ) };
+*note_on = sub { shift->send_event( note_on => @_ ) };
+*control_change = sub { shift->send_event( control_change => @_ ) };
+*patch_change = sub { shift->send_event( patch_change => @_ ) };
+*key_after_touch = sub { shift->send_event( key_after_touch => @_ ) };
+*channel_after_touch = sub { shift->send_event( channel_after_touch => @_ ) };
+*pitch_wheel_change = sub { shift->send_event( pitch_wheel_change => @_ ) };
+*sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
+*sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
+*sysex = sub { shift->send_event( sysex => @_ ) };
+
+=head2 cc
+
+An alias for control_change.
+
+=cut
+
+*cc = \&control_change;
 
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
@@ -620,6 +894,55 @@ sub DESTROY {
 1;
 
 __END__
+
+=head1 Virtual Devices and Windows
+
+=head2 Loopback Devices
+
+Windows currently (as of June 2024) lacks built-in support for on-the-fly
+creation of virtual MIDI devices. While
+L<Windows MIDI Services|https://microsoft.github.io/MIDI/>
+will offer dynamic virtual loopback, alongside MIDI 2.0 support, it is a
+work in progress.
+
+This situation has resulted in some confusion, and a number of solutions
+exist to work around the issue. Virtual loopback drivers allow for the
+creation of external ports which may be connected to by each participant
+in the MIDI conversation.
+
+Rather than create a virtual port, you connect your Perl code to a
+virtual loopback device, and connect your DAW or synth to the other side
+of the loopback device.
+
+The best currently working virtual loopback drivers based on my research are:
+
+L<loopMIDI|https://www.tobias-erichsen.de/software/loopmidi.html> by
+Tobias Erichsen
+
+L<Sbvmidi|https://springbeats.com/sbvmidi/> by Springbeats
+
+L<LoopBe|https://www.nerds.de/en/loopbe1.html> by nerds.de
+
+In my own experience loopMIDI is the simplest and most flexible option,
+allowing for arbitrary numbers of devices.
+
+You should review the licensing terms of any software you choose to
+incorporate into your projects to ensure it is appropriate for your use case.
+Each of the above is free for personal, non-commercial use.
+
+=head2 General MIDI
+
+A General MIDI synth called "Microsoft GS Wavetable Synth" should be
+available to use on Windows. While the sounds are basic, it can act
+as a useful device for testing. This should play a middle-C note on the
+default piano instrument:
+
+    use MIDI::RtMidi::FFI::Device;
+    my $device = RtMidiOut->new;
+    $device->open_port_by_name( qr/wavetable/i );
+    $device->note_on( 0x00, 0xc3, 0x7f );
+    sleep( 1 );
+    $device->note_off( 0x00, 0xc3 );
 
 =head1 KNOWN ISSUES
 
