@@ -552,7 +552,7 @@ Additional message types handled by this module are:
 
 =over
 
-=item ('timecode', I<rate_and_hour>, I<minute>, I<second>, I<frame> )
+=item ('timecode', I<rate>, I<hour>, I<minute>, I<second>, I<frame> )
 
 =item ('clock')
 
@@ -582,7 +582,17 @@ sub decode_message {
     my @bytes = unpack 'C*', $msg;
     my $function = shift @bytes;
     if ( my $function_name = $byte_lookup->{ $function } ) {
-        $decoded = [ $function_name, @bytes ];
+        if ( $function_name eq 'timecode' ) {
+            my $rate    = ( $bytes[0] & 0b1100000 ) >> 5;
+            my $hour    = $bytes[0] & 0b11111;
+            my $minute  = $bytes[1] & 0b111111;
+            my $second  = $bytes[2] & 0b111111;
+            my $frame   = $bytes[3] & 0b11111;
+            $decoded = [ $function_name, $rate, $hour, $minute, $second, $frame ];
+        }
+        else  {
+            $decoded = [ $function_name, @bytes ];
+        }
         goto return_decoded;
     }
 
@@ -593,7 +603,7 @@ sub decode_message {
 
     if ( ref $decoded ne 'ARRAY' ) {
         warn "Could not decode message " . unpack( 'H*', $msg );
-        return;
+        return [ $function, @bytes ];
     }
 
     # Delete dtime
@@ -640,14 +650,19 @@ sub encode_message {
 
     my $msg;
     if ( $function_lookup->{ $event[0] } ) {
-        $msg = \pack( 'C*', $function_lookup->{ shift @event }, @event );
+        my $ev = $function_lookup->{ shift @event };
+        if ( $ev == 0xF1 ) { # timecode
+            my $rate = shift @event;
+            $event[0] = ( $rate << 5 ) | $event[0];
+        }
+        $msg = \pack( 'C*', $ev, @event );
         goto return_msg;
     }
 
     # Insert 0 dtime
     splice @event, 1, 0, 0;
 
-    $msg = MIDI::Event::encode( [[@event]], { never_add_eot => 1 } );
+    $msg = MIDI::Event::encode( [\@event], { never_add_eot => 1 } );
 
     # Strip dtime before send
     substr( $$msg, 0, 1 ) = '';
