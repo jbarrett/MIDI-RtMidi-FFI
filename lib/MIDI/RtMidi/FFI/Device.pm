@@ -22,14 +22,22 @@ package MIDI::RtMidi::FFI::Device;
     # MIDI device on your system, such as a loopback device, or virtual or
     # hardware synth. Your device must be connected to some sort of synth to
     # make noise.
-    $device->open_port_by_name( qr/wavetable|loopmidi|timidity|dls/i )
+    $device->open_port_by_name( qr/wavetable|loopmidi|timidity|dls/i );
     
     # Now that a port is open we can start to send MIDI messages, such as
     # this annoying sequence
     while ( 1 ) {
-        $device->note_on( 0x00, 0x40, 0x5a );
+        # Send Middle C (0x3C) to channel 0, strong velocity (0x7A)
+        $device->note_on( 0x00, 0x3C, 0x7A );
+        
+        # Send a random control change value to Channel 0, CC 1
+        $device->cc( 0x00, 0x01, int rand( 128 ) );
+        
         sleep 1;
+        
+        # Stop playing Middle C on channel 0
         $device->note_off( 0x00, 0x40 );
+        
         sleep 1;
     }
 
