@@ -800,7 +800,7 @@ Comtroller (CC). 14 bit messages may only be sent to the first 32 CCs and must
 be supported by the receiving instrument.
 
 I<Implementation note>: 14 bit Control Change is sent as a pair of 7 bit
-Control Change messages, in big endian order - that is, the MSB (most
+Control Change messages. The MSB (most
 significant byte) is sent first, and LSB (least significant byte) follows. The
 MSB is sent to a controller between 0-31, LSB is sent to that controller + 32,
 e.g. MSB is sent to controller 6, LSB to controller 38.
