@@ -48,6 +48,47 @@ you manage devices, ports and MIDI events.
 
 =cut
 
+=head2 Some MIDI Terms
+
+There are terms specific to MIDI which are somewhat overloaded by this
+interface. I will try to disambiguate them here.
+
+=head3 Device
+
+A MIDI device, virtual or physical, is required to mediate MIDI messages.  That
+is, you may not simply connect RtMidi to another piece of software without a
+virtual or loopback device in between, e.g. via the L</open_virtual_port>
+method. RtMidi may talk to connected physical devices directly, without the use
+of a virtual device. The same is true of any software-defined virtual or
+loopback devices external to your software.
+
+"Virtual device" and "virtual port" are effectively interchangeable
+terms when using RtMidi - each
+MIDI::RtMidi::FFI::Device may represent a single input or output port,
+so any virtual device instantiated has a single virtual port.
+
+See L</Virtual Devices and Windows> for caveats and workarounds for virtual
+device support on that platform.
+
+=head3 Port
+
+Every MIDI device has at least one port for Input and/or Output.
+In hardware, connections between ports are usually 1:1. Some software
+implementations allow for multiple connections to a port.
+
+There is a special Output device usually called "MIDI Thru" or
+"MIDI Through" which mirrors every message sent to a given Input port.
+
+=head3 Channel
+
+Each port has 16 channels, numbered 0-15, which are used to route messages
+to specific instruments, modules or effects.
+
+Channel must be specified in any message related to performance, such as
+"note on" or "control change".
+
+=cut
+
 use MIDI::RtMidi::FFI ':all';
 use MIDI::Event;
 use Carp;
@@ -326,7 +367,7 @@ sub get_port_name {
 
 =head2 get_current_api
 
-    $self->get_current_api();
+    $device->get_current_api();
 
 Returns the MIDI API in use for the device.
 
@@ -856,6 +897,8 @@ __END__
 
 =head1 Virtual Devices and Windows
 
+=head2 Loopback Devices
+
 Windows currently (as of June 2024) lacks built-in support for on-the-fly
 creation of virtual MIDI devices. While
 L<Windows MIDI Services|https://microsoft.github.io/MIDI/>
@@ -886,6 +929,20 @@ allowing for arbitrary numbers of devices.
 You should review the licensing terms of any software you choose to
 incorporate into your projects to ensure it is appropriate for your use case.
 Each of the above is free for personal, non-commercial use.
+
+=head2 General MIDI
+
+A General MIDI synth called "Microsoft GS Wavetable Synth" should be
+available to use on Windows. While the sounds are basic, it can act
+as a useful device for testing. This should play a middle-C note on the
+default piano instrument:
+
+    use MIDI::RtMidi::FFI::Device;
+    my $device = RtMidiOut->new;
+    $device->open_port_by_name( qr/wavetable/i );
+    $device->note_on( 0x00, 0xc3, 0x7f );
+    sleep( 1 );
+    $device->note_off( 0x00, 0xc3 );
 
 =head1 KNOWN ISSUES
 
