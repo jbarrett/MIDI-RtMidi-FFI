@@ -48,48 +48,6 @@ you manage devices, ports and MIDI events.
 
 =cut
 
-=head2 Some MIDI Terms
-
-There are terms specific to MIDI which are somewhat overloaded by this
-interface. I will try to disambiguate them here.
-
-=head3 Device
-
-A MIDI device, virtual or physical, is required to mediate MIDI messages.  That
-is, you may not simply connect RtMidi to another piece of software without a
-virtual or loopback device in between, e.g. via the L</open_virtual_port>
-method. RtMidi may talk to connected physical devices directly, without the use
-of a virtual device. The same is true of any software-defined virtual or
-loopback devices external to your software, RtMidi may connect directly to
-these.
-
-"Virtual device" and "virtual port" are effectively interchangeable
-terms when using RtMidi - each
-MIDI::RtMidi::FFI::Device may represent a single input or output port,
-so any virtual device instantiated has a single virtual port.
-
-See L</Virtual Devices and Windows> for caveats and workarounds for virtual
-device support on that platform.
-
-=head3 Port
-
-Every MIDI device has at least one port for Input and/or Output.
-In hardware, connections between ports are usually 1:1. Some software
-implementations allow for multiple connections to a port.
-
-There is a special Output device usually called "MIDI Thru" or
-"MIDI Through" which mirrors every message sent to a given Input port.
-
-=head3 Channel
-
-Each port has 16 channels, numbered 0-15, which are used to route messages
-to specific instruments, modules or effects.
-
-Channel must be specified in any message related to performance, such as
-"note on" or "control change".
-
-=cut
-
 use MIDI::RtMidi::FFI ':all';
 use MIDI::Event;
 use Carp;
@@ -120,13 +78,13 @@ my $byte_lookup = {
 
 my $function_lookup = { reverse %{ $byte_lookup } };
 
-# Only send MSB when it changes, according to MIDI 1.0 detailed spec.
+# Only send MSB when it changes, according to option in MIDI 1.0 detailed spec.
 sub _midi_1_0_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
     my $msb = $value >> 7 & 0x7F;
     my $lsb = $value & 0x7F;
     my $prev = \$self->{ enc_prev_cc }->[ $channel ]->[ $controller ];
-    if ( defined $$prev && $$prev != $msb ) {
+    if ( $$prev != $msb ) {
         $$prev = $msb;
         $self->_send_message_encoded( control_change => $channel, $controller, $msb );
     }
@@ -147,6 +105,18 @@ sub _backwards_encode_cc {
     $self->_send_message_encoded( control_change => $channel, $controller, $value >> 7 & 0x7F );
 }
 
+sub _backwait_encode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    my $msb = $value >> 7 & 0x7F;
+    my $lsb = $value & 0x7F;
+    my $prev = \$self->{ enc_prev_cc }->[ $channel ]->[ $controller ];
+    $self->_send_message_encoded( control_change => $channel, $controller | 0x20 , $lsb );
+    if ( ! defined $$prev || $$prev != $msb ) {
+        $$prev = $msb;
+        $self->_send_message_encoded( control_change => $channel, $controller, $msb );
+    }
+}
+
 # Send MSB/LSB pair each time, MSB first on high channel no.
 sub _doubleback_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
@@ -163,12 +133,73 @@ sub _bassack_encode_cc {
 
 my $cc_encode = {
     midi       => \&_midi_1_0_encode_cc,
+    await      => \&_midi_1_0_encode_cc,
     pair       => \&_pair_encode_cc,
     backwards  => \&_backwards_encode_cc,
+    backwait   => \&_backwait_encode_cc,
     doubleback => \&_doubleback_encode_cc,
     bassack    => \&_bassack_encode_cc,
-    await      => \&_midi_1_0_encode_cc,
 };
+
+sub _resolve_cc_encoder {
+    my $encoder = shift;
+    return $encoder if ref $encoder eq 'CODE';
+    return $cc_encode->{ $encoder };
+}
+
+# MSB, then LSB. Do not wait for LSB - LSB = 0 when MSB changes
+sub _midi_1_0_decode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    my $prev = \$self->{ dec_prev_cc }->[ $channel ]->[ $controller + 32 ];
+    if ( $controller >= 32 ) {
+        $$prev //= 0;
+        return [ control_change => $channel, $controller - 32, ( $$prev >> 7 ) + ( $value & 0x7F ) ];
+    }
+    if ( $$prev != $value ) {
+        $$prev = $value;
+        return [ control_change => $channel, $controller, $value >> 7 ];
+    }
+}
+
+# Decode response for each LSB + last sent MSB
+sub _await_decode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    my $prev = \$self->{ dec_prev_cc }->[ $channel ]->[ $controller + 32 ];
+    if ( $controller >= 32 ) {
+        return unless defined $$prev;
+        return [ control_change => $channel, $controller - 32, ( $$prev >> 7 ) + ( $value & 0x7F ) ];
+    }
+    $$prev = $value;
+    return;
+}
+
+# Store last sent LSB, combine with new MSB messages
+sub _backwards_decode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    my $prev = \$self->{ dec_prev_cc }->[ $channel ]->[ $controller + 32 ];
+    if ( $controller >= 32 ) {
+        return unless $$prev;
+        return [ control_change => $channel, $controller - 32, ( $$prev >> 7 ) + ( $value & 0x7F ) ];
+    }
+    $$prev = $value;
+    return;
+}
+
+my $cc_decode = {
+    midi       => \&_midi_1_0_decode_cc,
+    await      => \&_await_decode_cc,
+    pair       => \&_await_decode_cc,
+    backwards  => \&_backwards_decode_cc,
+    backwait   => \&_backwait_decode_cc,
+    doubleback => \&_doubleback_decode_cc,
+    bassack    => \&_bassack_decode_cc,
+};
+
+sub _resolve_cc_decoder {
+    my $decoder = shift;
+    return $decoder if ref $decoder eq 'CODE';
+    return $cc_decode->{ $decoder };
+}
 
 =head1 METHODS
 
@@ -219,8 +250,9 @@ B<queue_size_limit> -
 =item *
 
 B<14bit_mode> -
-Sets 14-bit control change behaviour. One of 'midi', 'pair', 'backwards',
-'doubleback', 'bassack', 'await'
+Sets 14-bit control change behaviour. One of 'midi', 'pair', 'await',
+'backwards', 'doubleback' or 'bassack'. More information on these options
+can be found in L</14-bit Control Change Modes>
 
 =item *
 
@@ -252,6 +284,7 @@ sub new {
         ? bless( $args[0], $class )
         : bless( { @args }, $class );
     $self->{type} //= 'out';
+    $self->{ '14_bit_mode' } = $self->{ '14_bit_mode' } || $self->{ '14_bit_callback' };
     $self->{ignore_sysex} //= 1;
     $self->{ignore_timing} //= 1;
     $self->{ignore_sensing} //= 1;
@@ -504,6 +537,7 @@ sub set_callback_decoded {
     my $event_cb = sub {
         my ( $ts, $msg, $data ) = @_;
         my $decoded = $self->decode_message( $msg );
+        return unless $decoded;
         $cb->( $ts, $msg, $decoded, $data );
     };
     $self->set_callback( $event_cb, $data );
@@ -717,6 +751,13 @@ sub decode_message {
         return [ $function, @bytes ];
     }
 
+    if ( $self->{ '14bit_mode' } && $decoded->[0] eq 'control_change' && $decoded->[2] < 64 ) {
+        my $method = _resolve_cc_decoder( $self->{ '14bit_mode' } )
+            // croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }";
+        $decoded = $self->$method( @{ $decoded }[ 1..3 ] );
+        return unless $decoded;
+    }
+
     # Delete dtime
     splice( @{ $decoded }, 1, 1 );
 
@@ -809,8 +850,8 @@ sub send_message_encoded {
     my ( $self, @event ) = @_;
     if ( $event[0] eq 'control_change' ) {
         if ( $event[2] < 32 && $self->{ '14bit_mode' } ) {
-            my $method = $cc_encode->{ $self->{ '14bit_mode' } };
-            croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }" unless $method;
+            my $method = _resolve_cc_encoder( $self->{ '14bit_mode' } )
+                 // croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }";
             return $method->( $self, @event );
         }
     }
@@ -902,6 +943,50 @@ An alias for control_change.
 
 *cc = \&control_change;
 
+=head2 get_14bit_mode
+
+    $device->get_14bit_mode;
+
+Get the currently in-use 14 bit mode. See L</14-bit Control Change Modes>.
+
+=cut
+
+sub get_14bit_mode { $_[0]->{ '14bit_mode' } }
+*get_14bit_callback = \&get_14bit_mode;
+
+=head2 set_14bit_mode
+
+    $device->set_14bit_mode( 'await' );
+    $device->set_14bit_mode( $callback );
+
+Sets the 14 bit mode. See L</14-bit Control Change Modes>.
+
+=cut
+
+sub set_14bit_mode {
+    my ( $self, $mode ) = @_;
+    delete $self->{ dec_prev_cc };
+    delete $self->{ enc_prev_cc };
+    $self->{ '14bit_mode' } = $mode;
+}
+*set_14bit_callback = \&set_14bit_mode;
+
+=head2 disable_14bit_mode
+
+    $device->disable_14bit_mode;
+
+Disables 14 bit mode. See L</14-bit Control Change Modes>.
+
+=cut
+
+sub disable_14bit_mode {
+    my ( $self ) = @_;
+    delete $self->{ dec_prev_cc };
+    delete $self->{ enc_prev_cc };
+    delete $self->{ '14bit_mode' };
+}
+*disable_14bit_callback = \&disable_14bit_mode;
+
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
 
@@ -966,11 +1051,305 @@ sub DESTROY {
 
 1;
 
-__END__
+#__END__
+
+=head1 14 bit Control Change Modes
+
+14 bit Control Change messages are achieved by sending a pair of 7-bit
+messages. Only CCs 0-31 can send / receive 14-bit messages. The most
+significant byte (or MSB or coarse control) is sent on the desired CC.
+The least significant byte (or LSB or fine control) is sent on that
+CC + 32. 14 bit allows for a value between 0 and 16,383.
+
+For example, to set CC 6 on channel 0 to the value 1,337 you would do
+something like:
+
+    my $value = 1_337;
+    my $msb = $value >> 7 & 0x7F;
+    my $lsb = $value & 0x7F;
+    $sevice->cc( 0, 6, $msb );
+    $sevice->cc( 0, 38, $lsb );
+
+If receving 14 bit Control Change, you would need to cache the MSB
+value for the CC and channel, then combine it later with the matching
+LSB, something like:
+
+    $device->set_callback_decoded( sub {
+        my ( $ts, $msg, $event ) = @_;
+        state $last_msb;
+
+        if ( $event->[0] eq 'control_change' ) {
+            my $cc_value;
+            my ( $channel, $cc, $value ) = @{ $event }[ 1..3 ];
+            if ( $channel < 32 ) {
+                # Cache MSB
+                $last_msb->[ $channel ]->[ $cc ] = $value;
+            }
+            elsif ( $channel < 64 ) {
+                my $msb = $last_msb->[ $channel ]->[ $cc ];
+                $cc_value = $msb << 7 | $value & 0x7F;
+            }
+            else {
+                $cc_value = $value;
+            }
+            if ( defined $cc_value ) {
+                # ... do something with $cc_value here
+            }
+        }
+        # ... process other events here
+    } );
+
+Some problems emerge with this approach. The first is MIDI standards -
+deficiencies in, and deviation from.
+
+For example, the MIDI 1.0 Detailed Specification states:
+
+I<
+"If both the MSB and LSB are sent initially, a subsequent fine adjustment only
+requires the sending of the LSB. The MSB does not have to be retransmitted. If
+a subsequent major adjustment is necessary the MSB must be transmitted again.
+When an MSB is received, the receiver should set its concept of the LSB to
+zero."
+>
+
+Let's break this down. I<"If 128 steps of resolution is sufficient the second
+byte (LSB) of the data requires the sending of the LSB. The MSB does not have
+to be retransmitted.">. The decoding callback above I<should> cater for this,
+as the cached MSB will persist for multiple LSB transmissions. So far, so OK.
+
+I<"If a subsequent major adjustment is necessary the MSB must be transmitted
+again."> - again, this is fine - it fits in with expectations so far.
+
+I<"When an MSB is received, the receiver should set its concept of the LSB
+to zero">. This, to me, is ambiguous. Should our CC now be set to
+MSB << 7 + 0? Or is it an instruction to forget any existing LSB value and
+await the transmission of a fresh one before constructing a CC value?
+
+With the former approach you could imagine a descending control passing a
+MSB threshold, and jumping to a value aligned with the next lowest MSB
+before jumping back up when the next LSB is received. The latter approach
+seems to make more sense to me as it would avoid such jumps.
+
+Some implementations skip the MSB where it would be zero.
+That is for values < 128, no MSB is sent. If the controller starts at zero,
+no MSB value would be cached. If the cached MSB happens to be invalid when
+small values are sent (that is, the device *never* sends MSB for values
+< 128), then we must resort to heuristic detection for crossing of this
+MSB threshold (a large jump in LSB).
+
+Some implementations send LSB first, MSB second. If a LSB/MSB pair is sent
+each time, this is easily handled. If a pair is sent, then fine control
+is sent via LSB only we have a problem. When we cross a MSB threshold,
+we need to wait for the new MSB value before we can construct the complete
+CC value. This means we need to somehow know when to stop performing fine
+control with new LSB values, and await a new MSB value - we are back to
+heuristic detection, looking for LSB jumps.
+
+All to say, there are some ambiguities in how this is handled, and there
+are endless variations between devices.
+
+The second problem is needing to write explicit 14 bit message handling in
+each project individually. This module intends to obviate some of this by
+providing 14 bit message handling out of the box, with a number of
+compatibility options. Currently, these options are mostly derived from
+reading manuals and forum posts - testing and feedback appreciated!
+
+=head2 For Output (Sending)
+
+When sending 14 bit CC, multiple messages must potentially be constructed,
+then sent individually. A number of options on handling this are built into
+this module.
+
+=head3 midi
+
+This implements the MIDI 1.0 specification. MSB values are
+only sent where they have changed. LSB values are always sent. Messages
+are in MSB/LSB order.
+
+=head3 await
+
+Equivalent to 'midi' when sending messages.
+
+=head3 pair
+
+Always sends a complete pair of messages for each controller change,
+in MSB/LSB order.
+
+=head3 backwards
+
+Sends a complete pair of messages for each controller change, in
+LSB/MSB order.
+
+=head3 backwait
+
+Sends messages in LSB/MSB order. MSB values are only sent when they have
+changed.
+
+=head3 doubleback
+
+"Double backwards" mode. Sends a complete pair of messages for each controller
+change, in MSB/LSB order, with the MSB value on the B<high> controller number.
+
+=head3 bassack
+
+"Bass-ackwards" mode.  Sends a complete pair of messages for each controller
+change, in LSB/MSB order, with the MSB value on the B<high> controller number.
+
+=head3 Callback
+
+You may also provide your own callback to send 14 bit Control Change. This
+callback will receive the following parameters:
+
+=over 4
+
+=item *
+
+B<device> - This instance of the device.
+
+=item *
+
+B<channel> - The channel to send the message on, 0-15.
+
+=item *
+
+B<controller> - The receiving controller, 0-127.
+
+=item *
+
+B<value> - A 14 bit CC value, 0-16383.
+
+=back
+
+To take a simple example, imagine we wanted a callback which implemented the
+MIDI standard:
+
+    my $cc_cache;
+    sub midi_cb {
+        my ( $dev, $channel, $controller, $value ) = @_;
+        my $msb = $value >> 7 & 0x7F;
+        my $lsb = $value & 0x7F;
+        my $send = sub {
+            $dev->send_message( $dev->encode_message( @_ ) );
+        }
+    
+        if ( $cc_cache->{ "$channel-$controller" } != $msb ) {
+            $cc_cache->{ "$channel-$controller" } = $msb;
+            $send->( control_change => $channel, $controller, $msb );
+        }
+    
+        $send->( control_change => $channel, $controller, $lsb );
+    }
+    
+    my $device = RtMidiOut->new( 14bit_callback => \&midi_cb );
+    
+    # The sending of this message will be handled by your callback.
+    $device->cc( 0x00, 0x06, 0x1337 );
+
+Callbacks should not call the send_message_encoded, send_event, control_change
+or cc methods as these may invoke further 14 bit message handling, causing an
+infinite loop. They must handle message encoding themselves, and must send
+encoded messages with the send_message method.
+
+=head2 For Input (Decoding)
+
+When decoding 14 bit Control Change messages involves coalescing a pair of
+7 bit messages which may not appear in a strict order. One value must be
+cached and combined with one or more values which arrive later.
+
+The following decode modes are built in:
+
+=head3 midi
+
+This implements the strictest interpretation of the MIDI 1.0 specification.
+LSB messages are combined with the last sent MSB. If no MSB has yet been
+received, the value will be < 128. When a new MSB is received, LSB is
+reset to zero and a new value is returned.
+
+=head3 await
+
+This is the same as 'midi' mode, but it aleays awaits a LSB message before
+returning a value.
+
+This is likely the most compatible and reliable mode for decoding.
+
+=head3 pair
+
+Expects a pair of values in MSB/LSB order. This is equivalent to the 'await'
+mode, as that can adequately decode messages sent using this approach.
+
+=head3 backwards
+
+Expects a pair of values in LSB/MSB order. New values are only returned on
+receipt of the MSB.
+
+=head3 backwait
+
+Expects an initial pair in LSB/MSB order, with additional fine control sent
+as additional LSB messages. This uses a heuristic to guess when to wait for
+new MSB values.
+
+=head3 doubleback
+
+"Double backwards" mode. Expects messages in MSB/LSB ordered pairs with MSB
+on the B<high> controller number. New values are returned on incoming MSB
+messages.
+
+=head3 bassack
+
+"Bass-ackwards" mode. Expects messages in LSB/MSB ordered pairs with MSB on
+the B<high> controller number. New values are returned on incoming LSB
+messages.
+
+=head3 Callback
+
+
+=head1 RPN and NRPN messages
+
+=head1 Some MIDI Terms
+
+There are terms specific to MIDI which are somewhat overloaded by this
+interface. I will try to disambiguate them here.
+
+=head2 Device
+
+A MIDI device, virtual or physical, is required to mediate MIDI messages.  That
+is, you may not simply connect RtMidi to another piece of software without a
+virtual or loopback device in between, e.g. via the L</open_virtual_port>
+method. RtMidi may talk to connected physical devices directly, without the use
+of a virtual device. The same is true of any software-defined virtual or
+loopback devices external to your software, RtMidi may connect directly to
+these.
+
+"Virtual device" and "virtual port" are effectively interchangeable
+terms when using RtMidi - each
+MIDI::RtMidi::FFI::Device may represent a single input or output port,
+so any virtual device instantiated has a single virtual port.
+
+See L</Virtual Devices and Windows> for caveats and workarounds for virtual
+device support on that platform.
+
+=head2 Port
+
+Every MIDI device has at least one port for Input and/or Output.
+In hardware, connections between ports are usually 1:1. Some software
+implementations allow for multiple connections to a port.
+
+There is a special Output port usually called "MIDI Thru" or
+"MIDI Through" which mirrors every message sent to a given Input port.
+
+=head2 Channel
+
+Each port has 16 channels, numbered 0-15, which are used to route messages
+to specifically configured instruments, modules or effects.
+
+Channel must be specified in any message related to performance, such as
+"note on" or "control change".
+
+=head2 Messages and Events
+
+
 
 =head1 Virtual Devices and Windows
-
-=head2 Loopback Devices
 
 Windows currently (as of June 2024) lacks built-in support for on-the-fly
 creation of virtual MIDI devices. While
@@ -978,8 +1357,12 @@ L<Windows MIDI Services|https://microsoft.github.io/MIDI/>
 will offer dynamic virtual loopback, alongside MIDI 2.0 support, it is a
 work in progress.
 
-This situation has resulted in some confusion, and a number of solutions
-exist to work around the issue. Virtual loopback drivers allow for the
+This situation has resulted in some confusion for MIDI users on Windows,
+and a number of solutions exist to work around the issue.
+
+=head2 Loopback Devices
+
+Virtual loopback drivers allow for the
 creation of external ports which may be connected to by each participant
 in the MIDI conversation.
 
@@ -1005,10 +1388,10 @@ Each of the above is free for personal, non-commercial use.
 
 =head2 General MIDI
 
-A General MIDI synth called "Microsoft GS Wavetable Synth" should be
-available to use on Windows. While the sounds are basic, it can act
-as a useful device for testing. This should play a middle-C note on the
-default piano instrument:
+A General MIDI synth called "Microsoft GS Wavetable Synth" should be available
+for direct connection on Windows. While the sounds are basic, it can act as a
+useful device for testing. This should play a middle-C note on the default
+piano instrument:
 
     use MIDI::RtMidi::FFI::Device;
     my $device = RtMidiOut->new;
