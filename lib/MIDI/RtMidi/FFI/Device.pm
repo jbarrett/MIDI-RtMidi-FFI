@@ -141,7 +141,7 @@ my $cc_encode = {
     bassack    => \&_bassack_encode_cc,
 };
 
-sub _resolve_cc_encoder {
+sub resolve_cc_encoder {
     my $encoder = shift;
     return $encoder if ref $encoder eq 'CODE';
     return $cc_encode->{ $encoder };
@@ -195,7 +195,7 @@ my $cc_decode = {
     bassack    => \&_bassack_decode_cc,
 };
 
-sub _resolve_cc_decoder {
+sub resolve_cc_decoder {
     my $decoder = shift;
     return $decoder if ref $decoder eq 'CODE';
     return $cc_decode->{ $decoder };
@@ -490,9 +490,9 @@ Type 'in' only. Sets a callback to be executed when an incoming MIDI message is
 received. Your callback receives the time which has elapsed since the previous
 event in seconds, alongside the MIDI message.
 
-As a callback may occur at any point in your program's flow, the program should
-probably not be doing much when it occurs. That is, programs handling RtMidi
-callbacks should be asleep or awaiting user input when the callback is
+B<NB> As a callback may occur at any point in your program's flow, the program
+should probably not be doing much when it occurs. That is, programs handling
+RtMidi callbacks should be asleep or awaiting user input when the callback is
 triggered.
 
 For the sake of compatibility with previous versions, some data may be passed
@@ -526,8 +526,8 @@ sub set_callback {
         # handle $msg / $event here
     } );
 
-Same as L</set_callback>, though also attempts to decode the message with
-L<MIDI::Event>, which is passed to the callback as an array ref. The original
+Same as L</set_callback>, though also attempts to decode the message, and pass
+that to the callback as an array ref. The original
 message is also sent in case this fails.
 
 =cut
@@ -1126,11 +1126,12 @@ MSB << 7 + 0? Or is it an instruction to forget any existing LSB value and
 await the transmission of a fresh one before constructing a CC value?
 
 With the former approach you could imagine a descending control passing a
-MSB threshold, and jumping to a value aligned with the next lowest MSB
+MSB threshold, then jumping to a value aligned with the floor value of
+the new lower MSB,
 before jumping back up when the next LSB is received. The latter approach
 seems to make more sense to me as it would avoid such jumps.
 
-Some implementations skip the MSB where it would be zero.
+Some implementations skip transmission of the MSB where it would be zero.
 That is for values < 128, no MSB is sent. If the controller starts at zero,
 no MSB value would be cached. If the cached MSB happens to be invalid when
 small values are sent (that is, the device *never* sends MSB for values
@@ -1139,7 +1140,7 @@ MSB threshold (a large jump in LSB).
 
 Some implementations send LSB first, MSB second. If a LSB/MSB pair is sent
 each time, this is easily handled. If a pair is sent, then fine control
-is sent via LSB only we have a problem. When we cross a MSB threshold,
+is sent via LSB we have a problem. When we cross a MSB threshold,
 we need to wait for the new MSB value before we can construct the complete
 CC value. This means we need to somehow know when to stop performing fine
 control with new LSB values, and await a new MSB value - we are back to
@@ -1212,7 +1213,7 @@ B<channel> - The channel to send the message on, 0-15.
 
 =item *
 
-B<controller> - The receiving controller, 0-127.
+B<controller> - The receiving controller, 0-31.
 
 =item *
 
@@ -1239,14 +1240,15 @@ MIDI standard:
     
         $send->( control_change => $channel, $controller, $lsb );
     }
-    
+
     my $device = RtMidiOut->new( 14bit_callback => \&midi_cb );
     
     # The sending of this message will be handled by your callback.
     $device->cc( 0x00, 0x06, 0x1337 );
 
 Callbacks should not call the send_message_encoded, send_event, control_change
-or cc methods as these may invoke further 14 bit message handling, causing an
+or cc methods as these may invoke further 14 bit message handling, potentially
+causing an
 infinite loop. They must handle message encoding themselves, and must send
 encoded messages with the send_message method.
 
@@ -1291,17 +1293,86 @@ new MSB values.
 =head3 doubleback
 
 "Double backwards" mode. Expects messages in MSB/LSB ordered pairs with MSB
-on the B<high> controller number. New values are returned on incoming MSB
+on the B<high> controller number. New values are returned on incoming LSB
 messages.
 
 =head3 bassack
 
 "Bass-ackwards" mode. Expects messages in LSB/MSB ordered pairs with MSB on
-the B<high> controller number. New values are returned on incoming LSB
+the B<high> controller number. New values are returned on incoming MSB
 messages.
 
 =head3 Callback
 
+You may also provide your own callback to send 14 bit Control Change. This
+callback will receive the following parameters:
+
+=over 4
+
+=item *
+
+B<device> - This instance of the device.
+
+=item *
+
+B<channel> - The channel the message was sent on, 0-15.
+
+=item *
+
+B<controller> - The receiving controller, 0-63.
+
+=item *
+
+B<value> - A 7 bit CC value, 0-127.
+
+=back
+
+Imagine we have a device which is MIDI 1.0 compatible, but does not send a
+MSB of zero for values < 128. We need to somehow detect a large swings in LSB,
+then assume the MSB has been set to zero. For extra credit, let's only do this
+only when the controller has tended towards the low end of the scale.
+
+Wrapping a built-in decoder is possible with the L</resolve_cc_decoder>
+method.
+
+    my $cc_cache;
+    sub midi_cb {
+        my ( $dev, $channel, $controller, $value ) = @_;
+        my $method = $dev->resolve_cc_decoder( 'await' );
+        if ( $channel < 32 ) {
+            $cc_cache->{ "$channel-$controller.msb" } = $value;
+            return $dev->method( $channel, $controller, $value );
+        }
+        elsif ($channel < 64 ) {
+            # Only perform LSB hackery at the low end of the dial
+            return $dev->$method( $channel, $controller, $value )
+                if $cc_cache->{ "$channel-$controller.msb" } > 5;
+            
+            # Get difference between prev LSB and this one
+            my $diff = abs $cc_cache->{ "$channel-$controller.lsb" } - $value;
+            $cc_cache->{ "$channel-$controller.lsb" } = $value;
+            
+            # Set MSB to 0 for the given controller if LSB has changed significantly
+            $dev->$method( $channel, $controller - 32, 0 ) if $diff > 100;
+            
+            # ... and return the constructed value
+            return $dev->$method( $channel, $controller, $value );
+        }
+        # This callback should only be invoked for CCs < 63, but let's be "safe"
+        $dev->$method( $channel, $controller, $value );
+    }
+    
+    my $device = RtMidiIn->new( 14bit_callback => \&midi_cb );
+    $device->set_callback_decoded (
+        my ( $ts, $msg, $event ) = @_;
+        # For 14 bit CC, $event will contain a message decoded by your callback
+    );
+
+One issue with the above implementation is that the heuristic magic numbers
+are untuned - they would require some real world testing and tuning, and may
+even vary depending on play styles or input source. Another issue is that
+this scenario is (I think) likely rare and probably does not need specific
+handling.
 
 =head1 RPN and NRPN messages
 
@@ -1347,7 +1418,14 @@ Channel must be specified in any message related to performance, such as
 
 =head2 Messages and Events
 
+A MIDI message is (usually) a short series of bytes sent on a port, instructing
+an instrument on how to behave - which notes to play, when, how loudly, with which
+timbral variations & expression, and so on. They may also contain configuration
+info or some other sort of instruction.
 
+In this module "events" usually refer to incoming message bytes decoded into a
+descriptive sequence of values, or a mechanism for turning these values into
+a message for ouput.
 
 =head1 Virtual Devices and Windows
 
@@ -1395,7 +1473,7 @@ piano instrument:
 
     use MIDI::RtMidi::FFI::Device;
     my $device = RtMidiOut->new;
-    $device->open_port_by_name( qr/wavetable/i );
+    $device->open_port_by_name( qr/gs\ wavetable/i );
     $device->note_on( 0x00, 0xc3, 0x7f );
     sleep( 1 );
     $device->note_off( 0x00, 0xc3 );
@@ -1407,6 +1485,13 @@ similarity of realtime MIDI messages and MIDI song file messages. It may break
 in unexpected ways if used for large SysEx messages or other "non-music"
 events, though should be fine for encoding and decoding note, pitch, aftertouch
 and CC messages.
+
+Test coverage, both automated testing and hands-on testing, is limited. Some
+elements of this module (especially around 14 bit CC and (N)RPN) are based on
+reading, and probably often misreading, MIDI specifications, device
+documentation and forum posts. Issues in the GitHUb repo are more than
+welcome, even if just to ask questions. You may also find me in #perl-music
+on irc.perl.org.
 
 =head1 SEE ALSO
 
