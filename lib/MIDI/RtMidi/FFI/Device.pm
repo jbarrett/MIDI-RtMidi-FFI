@@ -50,7 +50,8 @@ you manage devices, ports and MIDI events.
 
 use MIDI::RtMidi::FFI ':all';
 use MIDI::Event;
-use Carp;
+use Time::HiRes qw/ time /;
+use Carp qw/ carp croak /;
 
 our $VERSION = '0.00';
 
@@ -83,11 +84,9 @@ sub _midi_1_0_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
     my $msb = $value >> 7 & 0x7F;
     my $lsb = $value & 0x7F;
-    my $prev = \$self->{ enc_prev_cc }->[ $channel ]->[ $controller ];
-    if ( $$prev != $msb ) {
-        $$prev = $msb;
-        $self->_send_message_encoded( control_change => $channel, $controller, $msb );
-    }
+    my $last = $self->get_last( cc14 => $channel, $controller );
+    $self->_send_message_encoded( control_change => $channel, $controller, $msb )
+        if $last->{ val } != $msb;
     $self->_send_message_encoded( control_change => $channel, $controller | 0x20 , $lsb );
 }
 
@@ -109,12 +108,10 @@ sub _backwait_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
     my $msb = $value >> 7 & 0x7F;
     my $lsb = $value & 0x7F;
-    my $prev = \$self->{ enc_prev_cc }->[ $channel ]->[ $controller ];
+    my $last = $self->get_last( cc14 => $channel, $controller );
     $self->_send_message_encoded( control_change => $channel, $controller | 0x20 , $lsb );
-    if ( ! defined $$prev || $$prev != $msb ) {
-        $$prev = $msb;
-        $self->_send_message_encoded( control_change => $channel, $controller, $msb );
-    }
+    $self->_send_message_encoded( control_change => $channel, $controller, $msb )
+        if $last->{ val } != $msb;
 }
 
 # Send MSB/LSB pair each time, MSB first on high channel no.
@@ -141,48 +138,74 @@ my $cc_encode = {
     bassack    => \&_bassack_encode_cc,
 };
 
-sub resolve_cc_encoder {
-    my $encoder = shift;
-    return $encoder if ref $encoder eq 'CODE';
-    return $cc_encode->{ $encoder };
-}
-
 # MSB, then LSB. Do not wait for LSB - LSB = 0 when MSB changes
 sub _midi_1_0_decode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
-    my $prev = \$self->{ dec_prev_cc }->[ $channel ]->[ $controller + 32 ];
-    if ( $controller >= 32 ) {
-        $$prev //= 0;
-        return [ control_change => $channel, $controller - 32, ( $$prev >> 7 ) + ( $value & 0x7F ) ];
-    }
-    if ( $$prev != $value ) {
-        $$prev = $value;
-        return [ control_change => $channel, $controller, $value >> 7 ];
-    }
+    my $lowcon = $controller & ~0x20;
+    my $last = $self->get_last( cc14 => $channel, $lowcon );
+    return [ control_change => $channel, $lowcon, $last->{ val } << 7 | $value & 0x7F ]
+        if $controller & 0x20;
+    return [ control_change => $channel, $controller, $value << 7 ]
+        if defined $last->{ val } && $last->{ val } != $value;
 }
 
-# Decode response for each LSB + last sent MSB
+# Decode response for each LSB + last sent MSB - always wait for LSB.
 sub _await_decode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
-    my $prev = \$self->{ dec_prev_cc }->[ $channel ]->[ $controller + 32 ];
-    if ( $controller >= 32 ) {
-        return unless defined $$prev;
-        return [ control_change => $channel, $controller - 32, ( $$prev >> 7 ) + ( $value & 0x7F ) ];
-    }
-    $$prev = $value;
-    return;
+    my $lowcon = $controller & ~0x20;
+    my $last = $self->get_last( cc14 => $channel, $lowcon );
+    return unless $last;
+    return [ control_change => $channel, $lowcon, $last->{ val } << 7 | $value & 0x7F ]
+        if $controller & 0x20;
+}
+
+# Get last sent LSB, combine with new MSB messages
+sub _backwards_decode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    my $highcon = $controller | 0x20;
+    my $lowcon = $controller & ~0x20;
+    my $last = $self->get_last( cc14 => $channel, $highcon );
+    return unless $last;
+    return [ control_change => $channel, $lowcon, $value << 7 | $last->{ val } & 0x7F ]
+        if ! ( $controller & 0x20 );
+}
+
+# Get last sent LSB, combine with new MSB messages.
+# Accept further LSB messages for fine control.
+# Attempt to detect when a LSB should be associated with a yet-to-arrive MSB.
+# I think the worst case in erroneous detection is that we skip some fine
+# control messages.
+sub _backawait_decode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    my $highcon = $controller | 0x20;
+    my $lowcon = $controller & ~0x20;
+    my $last = $self->get_last( cc14 => $channel, $highcon );
+    return [ control_change => $channel, $lowcon, $value << 7 | $last->{ val } & 0x7F ]
+        if ! ( $controller & 0x20 );
+    return unless $last;
+    my $last_msb = $self->get_last( cc14 => $channel, $lowcon );
+    return [ control_change => $channel, $lowcon, $last_msb->{ val }  << 7 | $value & 0x7F ]
+        if abs( $last->{val} - $value ) < 100; # magic number, possibly bullshit !!!
+}
+
+# Store last sent MSB, combine with new LSB messages
+# MSB is on the high controller (target controller + 32)
+sub _doubleback_decode_cc {
+    my ( $self, $channel, $controller, $value ) = @_;
+    my $highcon = $controller | 0x20;
+    my $lowcon = $controller & ~0x20;
+    my $last_msb = $self->get_last( cc14 => $channel, $highcon );
+    return [ control_change => $channel, $lowcon, $last_msb->{ val } << 7 | $value & 0x7F ]
+        if ! ( $controller & 0x20 );
 }
 
 # Store last sent LSB, combine with new MSB messages
-sub _backwards_decode_cc {
+sub _bassack_decode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
-    my $prev = \$self->{ dec_prev_cc }->[ $channel ]->[ $controller + 32 ];
-    if ( $controller >= 32 ) {
-        return unless $$prev;
-        return [ control_change => $channel, $controller - 32, ( $$prev >> 7 ) + ( $value & 0x7F ) ];
-    }
-    $$prev = $value;
-    return;
+    my $lowcon = $controller & ~0x20;
+    my $last_lsb = $self->get_last( cc14 => $channel, $lowcon );
+    return [ control_change => $channel, $lowcon, $value->{ val } << 7 | $value & 0x7F ]
+        if $controller & 0x20;
 }
 
 my $cc_decode = {
@@ -194,12 +217,6 @@ my $cc_decode = {
     doubleback => \&_doubleback_decode_cc,
     bassack    => \&_bassack_decode_cc,
 };
-
-sub resolve_cc_decoder {
-    my $decoder = shift;
-    return $decoder if ref $decoder eq 'CODE';
-    return $cc_decode->{ $decoder };
-}
 
 =head1 METHODS
 
@@ -630,6 +647,7 @@ Type 'in' only. Gets the next message from the queue, if available.
 sub get_message {
     my ( $self ) = @_;
     croak "Unable to get_message for device type : $self->{type}" unless $self->{type} eq 'in';
+    $self->_init_timestamp;
     rtmidi_in_get_message( $self->{device}, $self->{queue_size_limit} );
 }
 
@@ -747,19 +765,21 @@ sub decode_message {
     $decoded = MIDI::Event::decode( \$msg )->[0];
 
     if ( ref $decoded ne 'ARRAY' ) {
-        warn "Could not decode message " . unpack( 'H*', $msg );
+        carp "Could not decode message " . unpack( 'H*', $msg );
         return [ $function, @bytes ];
-    }
-
-    if ( $self->{ '14bit_mode' } && $decoded->[0] eq 'control_change' && $decoded->[2] < 64 ) {
-        my $method = _resolve_cc_decoder( $self->{ '14bit_mode' } )
-            // croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }";
-        $decoded = $self->$method( @{ $decoded }[ 1..3 ] );
-        return unless $decoded;
     }
 
     # Delete dtime
     splice( @{ $decoded }, 1, 1 );
+
+    if ( $self->{ '14bit_mode' } && $decoded->[0] eq 'control_change' && $decoded->[2] < 64 ) {
+        my $method = $self->resolve_cc_decoder( $self->{ '14bit_mode' } )
+            // croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }";
+        my @cc = @{ $decoded }[ 1..$#$decoded ];
+        $decoded = $self->$method( @cc );
+        $self->set_last( cc14 => @cc );
+        return unless $decoded;
+    }
 
 return_decoded:
     $decoded->[0] = 'note_off' if ( $decoded->[0] eq 'note_on' && $decoded->[-1] == 0 );
@@ -779,6 +799,7 @@ Type 'out' only. Sends a message to the device's open port.
 sub send_message {
     my ( $self, $msg ) = @_;
     croak "Unable to send_message for device type : $self->{type}" unless $self->{type} eq 'out';
+    $self->_init_timestamp;
     rtmidi_out_send_message( $self->{device}, $msg );
 }
 
@@ -850,7 +871,7 @@ sub send_message_encoded {
     my ( $self, @event ) = @_;
     if ( $event[0] eq 'control_change' ) {
         if ( $event[2] < 32 && $self->{ '14bit_mode' } ) {
-            my $method = _resolve_cc_encoder( $self->{ '14bit_mode' } )
+            my $method = $self->resolve_cc_encoder( $self->{ '14bit_mode' } )
                  // croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }";
             return $method->( $self, @event );
         }
@@ -965,8 +986,7 @@ Sets the 14 bit mode. See L</14-bit Control Change Modes>.
 
 sub set_14bit_mode {
     my ( $self, $mode ) = @_;
-    delete $self->{ dec_prev_cc };
-    delete $self->{ enc_prev_cc };
+    $self->purge_last_events( 'cc14' );
     $self->{ '14bit_mode' } = $mode;
 }
 *set_14bit_callback = \&set_14bit_mode;
@@ -981,11 +1001,118 @@ Disables 14 bit mode. See L</14-bit Control Change Modes>.
 
 sub disable_14bit_mode {
     my ( $self ) = @_;
-    delete $self->{ dec_prev_cc };
-    delete $self->{ enc_prev_cc };
+    $self->purge_last_events;
     delete $self->{ '14bit_mode' };
 }
 *disable_14bit_callback = \&disable_14bit_mode;
+
+=head2 resolve_cc_encoder
+
+    $device->resolve_cc_encoder( 'await' );
+
+Return the callback associated with the given 14 bit CC encoder method.
+
+=cut
+
+sub resolve_cc_encoder {
+    my ( $self, $encoder ) = @_;
+    return $encoder if ref $encoder eq 'CODE';
+    return $cc_encode->{ $encoder };
+}
+
+=head2 resolve_cc_decoder
+
+    $device->resolve_cc_decoder( 'midi' );
+
+Return the callback associated with the given 14 bit CC decoder method.
+
+=cut
+
+sub resolve_cc_decoder {
+    my ( $self, $decoder ) = @_;
+    return $decoder if ref $decoder eq 'CODE';
+    return $cc_decode->{ $decoder };
+}
+
+=head2 get_timestamp
+
+    $device->get_timestamp;
+
+Returns the time since the first MIDI message was processed
+
+=cut
+
+sub get_timestamp {
+    time - shift->{ initial_ts };
+}
+
+sub _init_timestamp {
+    shift->{ initial_ts } //= time;
+}
+
+=head2 set_last_event
+
+    $device->set_last_event( cc14 => 2, 6, 127 );
+
+Set the last event explicitly. This event should represent a single 7-bit MIDI
+message, not a composite value such as 14 bit CC.
+
+=cut
+
+sub set_last_event {
+    my ( $self, @event ) = @_;
+    return if @event < 2;
+    my $value = pop @event;
+    my $event = shift @event;
+    my $event_spec = join '-', @event;
+    $self->{ last_event }->{ $event }->{ $event_spec } = { val => $value, ts => $self->get_timestamp };
+}
+
+=head2 set_last
+
+An alias for set_last_event
+
+=cut
+
+*set_last = \&set_last_event;
+
+=head2 get_last_event
+
+    my $last_event = $device->get_last_event( cc14 => $channel, $cc );
+    # ... Do something with $last_event->{ val } and $last_event->{ ts }
+
+Returns a hashref containing details on the last event matching the specified
+parameters, if it exists.
+Hashref keys include the value (val) and timestamp (ts).
+
+=cut
+
+sub get_last_event {
+    my ( $self, $event, @spec ) = @_;
+    $self->{ last_event }->{ $event }->{ join '-', @spec };
+}
+
+=head2 get_last
+
+An alias for get_last_event
+
+=cut
+
+*get_last = \&get_last_event;
+
+=head2 purge_last_events
+
+    $device->purge_last_events( 'cc14' );
+
+Delete all cached events for the event type.
+
+=cut
+
+sub purge_last_events {
+    my ( $self, $event ) = @_;
+    return unless $event;
+    $self->{last_event}->{ $event }
+}
 
 sub port_name { $_[0]->{port_name}; }
 sub name { $_[0]->{name}; }
@@ -1327,10 +1454,10 @@ B<value> - A 7 bit CC value, 0-127.
 
 =back
 
-Imagine we have a device which is MIDI 1.0 compatible, but does not send a
-MSB of zero for values < 128. We need to somehow detect a large swings in LSB,
-then assume the MSB has been set to zero. For extra credit, let's only do this
-only when the controller has tended towards the low end of the scale.
+Imagine we have a device which is MIDI 1.0 compatible, but does not send a new
+MSB value of zero for values < 128. We need to somehow detect a large swings in
+LSB, then assume the MSB has been set to zero. For extra credit, let's only do
+this only when the controller has tended towards the low end of the scale.
 
 Wrapping a built-in decoder is possible with the L</resolve_cc_decoder>
 method.
@@ -1373,8 +1500,6 @@ are untuned - they would require some real world testing and tuning, and may
 even vary depending on play styles or input source. Another issue is that
 this scenario is (I think) likely rare and probably does not need specific
 handling.
-
-=head1 RPN and NRPN messages
 
 =head1 Some MIDI Terms
 
@@ -1458,7 +1583,7 @@ L<Sbvmidi|https://springbeats.com/sbvmidi/> by Springbeats
 L<LoopBe|https://www.nerds.de/en/loopbe1.html> by nerds.de
 
 In my own experience loopMIDI is the simplest and most flexible option,
-allowing for arbitrary numbers of devices.
+allowing for arbitrary numbers of devices, with arbitrary names.
 
 You should review the licensing terms of any software you choose to
 incorporate into your projects to ensure it is appropriate for your use case.
@@ -1489,7 +1614,7 @@ and CC messages.
 Test coverage, both automated testing and hands-on testing, is limited. Some
 elements of this module (especially around 14 bit CC and (N)RPN) are based on
 reading, and probably often misreading, MIDI specifications, device
-documentation and forum posts. Issues in the GitHUb repo are more than
+documentation and forum posts. Issues in the GitHub repo are more than
 welcome, even if just to ask questions. You may also find me in #perl-music
 on irc.perl.org.
 
