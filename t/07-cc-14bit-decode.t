@@ -10,6 +10,8 @@ $dev->_init_timestamp;
 
 sub do_tests {
     my $tests = shift;
+    my $mode = $dev->get_14bit_mode // 'disabled';
+    my $num = 0;
     for my ( $test ) ( pairs @{ $tests } ) {
         my @msg  = @{ $test->key };
         my $res  = $test->value;
