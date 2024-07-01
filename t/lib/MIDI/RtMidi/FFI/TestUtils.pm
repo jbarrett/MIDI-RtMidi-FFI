@@ -27,7 +27,7 @@ sub newdevice {
 
 sub connect_devices {
     my ( $in, $out ) = @_;
-    my $port_name = "rtmidi-ffi-port-out-$time";
+    my $port_name = "rtmidi-ffi-port-in-$time";
     $in->open_virtual_port( $port_name );
     $out->open_port_by_name( qr/$port_name/ );
 }
