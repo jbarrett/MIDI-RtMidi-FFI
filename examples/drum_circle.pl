@@ -134,8 +134,8 @@ package ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
         die "Callback required" unless $opts{ callback };
-        # Timidity support requires timidity in daemon mode:
-        #   timidity -iAD -Os -B2,8 
+        # Timidity support requires timidity in daemon mode (ALSA only)
+        # (Does CoreMIDI have a General MIDI device by default?)
         $opts{port} //= qr/wavetable|loopmidi|timidity|dls/i;
         $opts{device} = RtMidiOut->new;
         $opts{device}->open_port_by_name( $opts{port} );
@@ -145,13 +145,14 @@ package ScorePlayer {
     sub device { shift->{ device } }
 
     sub reset_score {
-        my ( $drummer ) = @_;
+        my ( $self, $drummer ) = @_;
         # sorry
         $drummer->score->{ Score } = [
             grep { $_->[0] !~ /^note/ }
             @{ $drummer->score->{ Score } }
         ];
         ${ $drummer->score->{ Time } } = 0;
+        delete $self->{common}->{seen};
     }
 
     sub play {
@@ -171,12 +172,12 @@ package ScorePlayer {
                 $self->device->send_event( $event->[0] => @{ $event }[ 2 .. $#$event ] );
             }
             sleep(1);
-            reset_score( $d ); # not sorry
+            $self->reset_score( $d ); # not sorry
         }
     }
 };
 
-ScorePlayer->new( callback => \&score_cb )->play;
+ScorePlayer->new( callback => \&score_cb, common => \%common )->play;
 
 __END__
 
