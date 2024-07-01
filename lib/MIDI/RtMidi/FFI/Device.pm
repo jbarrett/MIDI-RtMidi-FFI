@@ -85,9 +85,10 @@ sub _midi_1_0_encode_cc {
     my $msb = $value >> 7 & 0x7F;
     my $lsb = $value & 0x7F;
     my $last = $self->get_last( control_change => $channel, $controller );
+    my $last_msb = $last->{ val };
     $self->_send_message_encoded( control_change => $channel, $controller, $msb )
-        if $last->{ val } != $msb;
-    $self->_send_message_encoded( control_change => $channel, $controller | 0x20 , $lsb );
+        if ( !defined $last_msb || $last_msb != $msb );
+    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $lsb );
 }
 
 # Send MSB/LSB pair each time
@@ -109,19 +110,20 @@ sub _backwait_encode_cc {
     my $msb = $value >> 7 & 0x7F;
     my $lsb = $value & 0x7F;
     my $last = $self->get_last( control_change => $channel, $controller );
+    my $last_msb = $last->{ val };
     $self->_send_message_encoded( control_change => $channel, $controller | 0x20 , $lsb );
     $self->_send_message_encoded( control_change => $channel, $controller, $msb )
-        if $last->{ val } != $msb;
+        if ( !defined $last_msb || $last_msb != $msb );
 }
 
-# Send MSB/LSB pair each time, MSB first on high channel no.
+# Send MSB/LSB pair each time, MSB first on high controller no.
 sub _doubleback_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
     $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value >> 7 & 0x7F );
     $self->_send_message_encoded( control_change => $channel, $controller, $value & 0x7F );
 }
 
-# Send MSB/LSB pair each time, MSB last on high channel no.
+# Send MSB/LSB pair each time, MSB last on high controller no.
 sub _bassack_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
     $self->_send_message_encoded( control_change => $channel, $controller, $value & 0x7F );
@@ -803,7 +805,6 @@ Type 'out' only. Sends a message to the device's open port.
 sub send_message {
     my ( $self, $msg ) = @_;
     croak "Unable to send_message for device type : $self->{type}" unless $self->{type} eq 'out';
-    $self->_init_timestamp;
     rtmidi_out_send_message( $self->{device}, $msg );
 }
 
@@ -868,6 +869,8 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 
 sub _send_message_encoded {
     my ( $self, @event ) = @_;
+    $self->_init_timestamp;
+    $self->set_last( @event ); # Limit when this is applied?
     $self->send_message( $self->encode_message( @event ) );
 }
 
@@ -877,7 +880,7 @@ sub send_message_encoded {
         if ( $event[2] < 32 && $self->{ '14bit_mode' } ) {
             my $method = $self->resolve_cc_encoder( $self->{ '14bit_mode' } )
                  // croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }";
-            return $method->( $self, @event );
+            return $method->( $self, @event[1..$#event ] );
         }
     }
     $self->_send_message_encoded( @event );
@@ -1496,7 +1499,6 @@ method.
         # Finally, process the value
         $device->$method( $channel, $controller, $value );
     };
-
     
     my $device = RtMidiIn->new( 14bit_callback => $callback );
     $device->set_callback_decoded ( sub {
