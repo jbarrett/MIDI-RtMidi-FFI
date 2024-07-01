@@ -892,8 +892,9 @@ callbacks, as callbacks are invoked by send_message_encoded.
 
 sub send_message_encoded_cb {
     my ( $self, @event ) = @_;
+    my $ret = $self->send_message( $self->encode_message( @event ) );
     $self->set_last( @event ); # Limit when this is applied?
-    $self->send_message( $self->encode_message( @event ) );
+    $ret;
 }
 
 =head2 send_event
