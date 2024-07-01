@@ -1,4 +1,4 @@
-# MIDI::RtMidi::FFI;
+# MIDI::RtMidi::FFI
 
 Perl bindings for [Gary P. Scavone's RtMidi library](https://www.music.mcgill.ca/~gary/rtmidi/), realtime MIDI input/output across Linux, Macintosh OS X, and Windows.
 

@@ -352,7 +352,7 @@ sub open_virtual_port {
 
     $device->open_port( $port, $name );
 
-Open a (numeric) port on a device, with given a name of your choosing.
+Open a (numeric) port on a device, with a name of your choosing.
 
 See L</open_port_by_name> for a potentially more flexible option.
 
@@ -661,8 +661,8 @@ sub get_message {
 
     $device->get_message_decoded();
 
-Type 'in' only. Gets the next message from the queue, if available, as a
-decoded L<MIDI::Event>.
+Type 'in' only. Gets the next message from the queue, if available, decoded
+as an event. See L</decode_message> for what to expect from incoming events.
 
 =cut
 
@@ -798,7 +798,7 @@ return_decoded:
 
     $device->send_message( $msg );
 
-Type 'out' only. Sends a message to the device's open port.
+Type 'out' only. Sends a message on the device's open port.
 
 =cut
 
@@ -1026,7 +1026,7 @@ Disables 14 bit mode. See L</14-bit Control Change Modes>.
 
 sub disable_14bit_mode {
     my ( $self, $nopurge ) = @_;
-    $self->purge_last_events( 'control_change' ) unless $nopurge;;
+    $self->purge_last_events( 'control_change' ) unless $nopurge;
     delete $self->{ '14bit_mode' };
 }
 *disable_14bit_callback = \&disable_14bit_mode;
@@ -1211,10 +1211,10 @@ sub DESTROY {
 messages. Only CCs 0-31 can send / receive 14-bit messages. The most
 significant byte (or MSB or coarse control) is sent on the desired CC.
 The least significant byte (or LSB or fine control) is sent on that
-CC + 32. 14 bit allows for a value between 0 and 16,383.
+CC + 32. 14 bit allows for a control value between 0 and 16,383.
 
-For example, to set CC 6 on channel 0 to the value 1,337 you would do
-something like:
+For example, to I<manually> set CC 6 on channel 0 to the value 1,337 you
+would do something like:
 
     my $value = 1_337;
     my $msb = $value >> 7 & 0x7F;
@@ -1223,8 +1223,8 @@ something like:
     $sevice->cc( 0, 38, $lsb );
 
 If receving 14 bit Control Change, you would need to cache the MSB
-value for the CC and channel, then combine it later with the matching
-LSB, something like:
+value for the geven CC and channel, then combine it later with the
+matching LSB, something like:
 
     $device->set_callback_decoded( sub {
         my ( $ts, $msg, $event ) = @_;
@@ -1313,7 +1313,7 @@ When sending 14 bit CC, multiple messages must potentially be constructed,
 then sent individually. A number of options on handling this are built into
 this module.
 
-=head3 midi
+=head3 midi (recommended)
 
 This implements the MIDI 1.0 specification. MSB values are
 only sent where they have changed. LSB values are always sent. Messages
@@ -1376,33 +1376,27 @@ B<value> - A 14 bit CC value, 0-16383.
 To take a simple example, imagine we wanted a callback which implemented the
 MIDI standard:
 
-    my $cc_cache;
-    sub midi_cb {
-        my ( $dev, $channel, $controller, $value ) = @_;
+    sub callback {
+        my ( $device, $channel, $controller, $value ) = @_;
         my $msb = $value >> 7 & 0x7F;
         my $lsb = $value & 0x7F;
-        my $send = sub {
-            $dev->send_message( $dev->encode_message( @_ ) );
+        my $last_msb = $device->get_last( control_change => $channel, $controller );
+        if ( !defined $last_msb || $last_msb->{ val } != $msb ) {
+            $device->send_message_encoded_cb( control_change => $channel, $controller, $msb )
         }
-    
-        if ( $cc_cache->{ "$channel-$controller" } != $msb ) {
-            $cc_cache->{ "$channel-$controller" } = $msb;
-            $send->( control_change => $channel, $controller, $msb );
-        }
-    
-        $send->( control_change => $channel, $controller, $lsb );
+        $device->send_message_encoded_cb( control_change => $channel, $controller | 0x20, $lsb );
     }
-
-    my $device = RtMidiOut->new( 14bit_callback => \&midi_cb );
+    
+    my $out = RtMidiOut->new( 14bit_callback => \&callback );
     
     # The sending of this message will be handled by your callback.
-    $device->cc( 0x00, 0x06, 0x1337 );
+    $out->cc( 0x00, 0x06, 0x1337 );
 
 Callbacks should not call the send_message_encoded, send_event, control_change
 or cc methods as these may invoke further 14 bit message handling, potentially
 causing an
-infinite loop. They must handle message encoding themselves, and must send
-encoded messages with the send_message method.
+infinite loop. The </send_message_encoded_cb> method exists for sending
+messages within 14 bit CC callbacks.
 
 =head2 For Input (Decoding)
 
@@ -1419,7 +1413,7 @@ LSB messages are combined with the last sent MSB. If no MSB has yet been
 received, the value will be < 128. When a new MSB is received, LSB is
 reset to zero and a new value is returned.
 
-=head3 await
+=head3 await (recommended)
 
 This is the same as 'midi' mode, but it aleays awaits a LSB message before
 returning a value.
@@ -1510,8 +1504,8 @@ method.
         $device->$method( $channel, $controller, $value );
     };
     
-    my $device = RtMidiIn->new( 14bit_callback => $callback );
-    $device->set_callback_decoded ( sub {
+    my $in = RtMidiIn->new( 14bit_callback => $callback );
+    $in->set_callback_decoded ( sub {
         my ( $ts, $msg, $event ) = @_;
         # For 14 bit CC, $event will contain a message decoded by your callback
     } );
@@ -1571,7 +1565,7 @@ info or some other sort of instruction.
 
 In this module "events" usually refer to incoming message bytes decoded into a
 descriptive sequence of values, or a mechanism for turning these values into
-a message for ouput.
+message bytes for ouput.
 
 =head1 Virtual Devices and Windows
 
@@ -1637,7 +1631,11 @@ elements of this module (especially around 14 bit CC and (N)RPN) are based on
 reading, and probably often misreading, MIDI specifications, device
 documentation and forum posts. Issues in the GitHub repo are more than
 welcome, even if just to ask questions. You may also find me in #perl-music
-on irc.perl.org.
+on irc.perl.org - look for fuzzix.
+
+This software has been fairly well exercised on Linux and Windows, but not
+so much on MacOS / CoreMIDI. I am interested in feedback on successes
+and failures on this platform.
 
 =head1 SEE ALSO
 
