@@ -86,23 +86,23 @@ sub _midi_1_0_encode_cc {
     my $lsb = $value & 0x7F;
     my $last = $self->get_last( control_change => $channel, $controller );
     my $last_msb = $last->{ val };
-    $self->_send_message_encoded( control_change => $channel, $controller, $msb )
+    $self->send_message_encoded_cb( control_change => $channel, $controller, $msb )
         if ( !defined $last_msb || $last_msb != $msb );
-    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $lsb );
+    $self->send_message_encoded_cb( control_change => $channel, $controller | 0x20, $lsb );
 }
 
 # Send MSB/LSB pair each time
 sub _pair_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
-    $self->_send_message_encoded( control_change => $channel, $controller, $value >> 7 & 0x7F );
-    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value & 0x7F );
+    $self->send_message_encoded_cb( control_change => $channel, $controller, $value >> 7 & 0x7F );
+    $self->send_message_encoded_cb( control_change => $channel, $controller | 0x20, $value & 0x7F );
 }
 
 # Send MSB/LSB pair each time, LSB first
 sub _backwards_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
-    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value & 0x7F );
-    $self->_send_message_encoded( control_change => $channel, $controller, $value >> 7 & 0x7F );
+    $self->send_message_encoded_cb( control_change => $channel, $controller | 0x20, $value & 0x7F );
+    $self->send_message_encoded_cb( control_change => $channel, $controller, $value >> 7 & 0x7F );
 }
 
 sub _backwait_encode_cc {
@@ -111,23 +111,23 @@ sub _backwait_encode_cc {
     my $lsb = $value & 0x7F;
     my $last = $self->get_last( control_change => $channel, $controller );
     my $last_msb = $last->{ val };
-    $self->_send_message_encoded( control_change => $channel, $controller | 0x20 , $lsb );
-    $self->_send_message_encoded( control_change => $channel, $controller, $msb )
+    $self->send_message_encoded_cb( control_change => $channel, $controller | 0x20 , $lsb );
+    $self->send_message_encoded_cb( control_change => $channel, $controller, $msb )
         if ( !defined $last_msb || $last_msb != $msb );
 }
 
 # Send MSB/LSB pair each time, MSB first on high controller no.
 sub _doubleback_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
-    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value >> 7 & 0x7F );
-    $self->_send_message_encoded( control_change => $channel, $controller, $value & 0x7F );
+    $self->send_message_encoded_cb( control_change => $channel, $controller | 0x20, $value >> 7 & 0x7F );
+    $self->send_message_encoded_cb( control_change => $channel, $controller, $value & 0x7F );
 }
 
 # Send MSB/LSB pair each time, MSB last on high controller no.
 sub _bassack_encode_cc {
     my ( $self, $channel, $controller, $value ) = @_;
-    $self->_send_message_encoded( control_change => $channel, $controller, $value & 0x7F );
-    $self->_send_message_encoded( control_change => $channel, $controller | 0x20, $value >> 7 & 0x7F );
+    $self->send_message_encoded_cb( control_change => $channel, $controller, $value & 0x7F );
+    $self->send_message_encoded_cb( control_change => $channel, $controller | 0x20, $value >> 7 & 0x7F );
 }
 
 my $cc_encode = {
@@ -867,13 +867,6 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 
 =cut
 
-sub _send_message_encoded {
-    my ( $self, @event ) = @_;
-    $self->_init_timestamp;
-    $self->set_last( @event ); # Limit when this is applied?
-    $self->send_message( $self->encode_message( @event ) );
-}
-
 sub send_message_encoded {
     my ( $self, @event ) = @_;
     if ( $event[0] eq 'control_change' ) {
@@ -883,7 +876,24 @@ sub send_message_encoded {
             return $method->( $self, @event[1..$#event ] );
         }
     }
-    $self->_send_message_encoded( @event );
+    $self->send_message_encoded_cb( @event );
+}
+
+=head2 send_message_encoded_cb
+
+    # Within callback ...
+    $device->send_message_encoded_cb( @event );
+
+Type 'out' only. A variant of send_message_encoded for use within user-defined
+callbacks, as callbacks are invoked by send_message_encoded.
+
+=cut
+
+sub send_message_encoded_cb {
+    my ( $self, @event ) = @_;
+    $self->_init_timestamp;
+    $self->set_last( @event ); # Limit when this is applied?
+    $self->send_message( $self->encode_message( @event ) );
 }
 
 =head2 send_event

@@ -24,7 +24,7 @@ sub test_cc {
     for my $test ( @{ $tests } ) {
         ++$testnum;
         for my $outmsg ( @{ $test->{ out } } ) {
-            $out->send_message_encoded( control_change => @{ $outmsg } );
+            $out->cc( @{ $outmsg } );
         }
         my $t = time;
         while ( 1 ) {
@@ -203,6 +203,47 @@ $tests = [
     {
         out => [ [ 0x0F, 0x1F, 0x3FFF ] ],
         in  => [ [ 0x0F, 0x1F, 0x3FFF & 0x7F ], [ 0x0F, 0x1F | 0x20, 0x3FFF >> 7 ] ],
+    },
+    {   # 7-bit CCs
+        out => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
+        in  => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
+    },
+];
+test_cc( $tests );
+
+# MIDI 1.0 compatible callback
+sub callback {
+    my ( $device, $channel, $controller, $value ) = @_;
+    my $msb = $value >> 7 & 0x7F;
+    my $lsb = $value & 0x7F;
+    my $last_msb = $device->get_last( control_change => $channel, $controller );
+    if ( !defined $last_msb || $last_msb->{ val } != $msb ) {
+        $device->send_message_encoded_cb( control_change => $channel, $controller, $msb )
+    }
+    $device->send_message_encoded_cb( control_change => $channel, $controller | 0x20, $lsb );
+}
+$out->set_14bit_mode( \&callback );
+is ref $out->get_14bit_mode, 'CODE', "14 bit mode is a callback";
+$tests = [
+    {
+        out => [ [ 0x01, 0x06, 0x1337 ] ],
+        in  => [ [ 0x01, 0x06, 0x1337 >> 7 ], [ 0x01, 0x06 | 0x20, 0x1337 & 0x7F ] ],
+    },
+    {   # Can send our own fine adjust to channel > 31
+        out => [ [ 0x01, 0x06 | 0x20, 0x39 ] ],
+        in  => [ [ 0x01, 0x06 | 0x20, 0x39 ] ],
+    },
+    {   # No new MSB
+        out => [ [ 0x01, 0x06, 0x1333 ] ],
+        in  => [ [ 0x01, 0x06 | 0x20, 0x1333 & 0x7F ] ],
+    },
+    {
+        out => [ [ 0x00, 0x00, 0x0000 ] ],
+        in  => [ [ 0x00, 0x00, 0x00 ], [ 0x00, 0x20, 0x00 ] ],
+    },
+    {
+        out => [ [ 0x0F, 0x1F, 0x3FFF ] ],
+        in  => [ [ 0x0F, 0x1F, 0x3FFF >> 7 ], [ 0x0F, 0x1F | 0x20, 0x3FFF & 0x7F ] ],
     },
     {   # 7-bit CCs
         out => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
