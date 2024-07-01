@@ -1168,6 +1168,68 @@ sub _create_device {
     );
 }
 
+=head2 open_rpn
+
+    $device->open_rpn( $channel, $msb, $lsb );
+    $device->open_rpn( 1, 0, 1 );
+
+Open a RPN for setting with later CC messages.
+This method will close any open RPN or NRPN.
+
+=cut
+
+sub open_rpn {
+    my ( $self, $channel, $msb, $lsb ) = @_;
+    $self->close_nrpn;
+    @{ $self->{ open_rpn }->{ $channel } } = ( $msb, $lsb );
+    $self->cc( $channel, 101, $msb );
+    $self->cc( $channel, 100, $lsb );
+}
+
+=head2 open_nrpn
+
+    $device->open_rpn( $channel, $msb, $lsb );
+    $device->open_rpn( 1, 0, 1 );
+
+Open a RPN for setting with later CC messages.
+This method will close any open RPN or NRPN.
+
+=cut
+
+sub open_nrpn {
+    my ( $self, $channel, $msb, $lsb ) = @_;
+    $self->close_nrpn;
+    @{ $self->{ open_nrpn }->{ $channel } } = ( $msb, $lsb );
+    $self->cc( $channel, 99, $msb );
+    $self->cc( $channel, 98, $lsb );
+}
+
+=head2 close_rpn
+
+    $device->close_rpn( $channel );
+
+Close any open RPN on the given channel.
+
+=cut
+
+sub close_rpn {
+    my ( $self, $channel ) = @_;
+    delete $self->{ open_rpn }->{ $channel };
+    delete $self->{ open_nrpn }->{ $channel };
+    $self->cc( $channel, 101, 127 );
+    $self->cc( $channel, 100, 127 );
+}
+
+=head2 close_nrpn
+
+    $device->close_rpn( $channel );
+
+Close any open NRPN on the given channel.
+
+=cut
+
+*close_nrpn = \&close_rpn;
+
 my $free_dispatch = {
     in  => \&rtmidi_in_free,
     out => \&rtmidi_out_free
