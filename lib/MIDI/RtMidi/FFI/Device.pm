@@ -804,6 +804,7 @@ Type 'out' only. Sends a message on the device's open port.
 
 sub send_message {
     my ( $self, $msg ) = @_;
+    $self->_init_timestamp;
     croak "Unable to send_message for device type : $self->{type}" unless $self->{type} eq 'out';
     rtmidi_out_send_message( $self->{device}, $msg );
 }
@@ -891,7 +892,6 @@ callbacks, as callbacks are invoked by send_message_encoded.
 
 sub send_message_encoded_cb {
     my ( $self, @event ) = @_;
-    $self->_init_timestamp;
     $self->set_last( @event ); # Limit when this is applied?
     $self->send_message( $self->encode_message( @event ) );
 }
