@@ -6,9 +6,6 @@ use Test::Lib;
 use Time::HiRes qw/ usleep time /;
 
 use MIDI::RtMidi::FFI::Device;
-my $dev = RtMidiOut->new( api_name => 'dummy' );
-$dev->_init_timestamp;
-
 use MIDI::RtMidi::FFI::TestUtils;
 
 plan skip_all => "Sanity check failed" unless sanity_check;
