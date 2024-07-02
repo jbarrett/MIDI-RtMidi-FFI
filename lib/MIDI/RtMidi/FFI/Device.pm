@@ -895,16 +895,19 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 sub send_message_encoded {
     my ( $self, @event ) = @_;
     if ( $event[0] eq 'control_change' ) {
+        my $rpn = $self->get_rpn( $event[1] );
         my $nrpn = $self->get_nrpn( $event[1] );
-        if ( $self->get_rpn( $event[1] ) && $event[2] == 6 && $self->get_rpn_14bit_mode ) {
-            my $method = $self->resolve_cc_encoder( $self->{ 'rpn_14bit_mode' } )
-                // croak "Unknown RPN 14 bit midi mode: $self->{ 'rpn_14bit_mode' }";
-            return $method->( $self, @event[1..$#event ] );
-        }
-        elsif ( $self->get_nrpn( $event[1] ) && $event[2] == 6 && $self->get_nrpn_14bit_mode ) {
-            my $method = $self->resolve_cc_encoder( $self->{ 'nrpn_14bit_mode' } )
-                // croak "Unknown NRPN 14 bit midi mode: $self->{ 'nrpn_14bit_mode' }";
-            return $method->( $self, @event[1..$#event ] );
+        if ( ( $rpn || $nrpn ) && $event[2] == 6 ) {
+            if ( $rpn && $self->get_rpn_14bit_mode ) {
+                my $method = $self->resolve_cc_encoder( $self->{ 'rpn_14bit_mode' } )
+                    // croak "Unknown RPN 14 bit midi mode: $self->{ 'rpn_14bit_mode' }";
+                return $method->( $self, @event[1..$#event ] );
+            }
+            elsif ( $nrpn && $self->get_nrpn_14bit_mode ) {
+                my $method = $self->resolve_cc_encoder( $self->{ 'nrpn_14bit_mode' } )
+                    // croak "Unknown NRPN 14 bit midi mode: $self->{ 'nrpn_14bit_mode' }";
+                return $method->( $self, @event[1..$#event ] );
+            }
         }
         elsif ( $event[2] < 32 && $self->{ '14bit_mode' } ) {
             my $method = $self->resolve_cc_encoder( $self->{ '14bit_mode' } )
@@ -1042,6 +1045,9 @@ cache of control change values.
 This method is intended to help find the most compatible 14 bit CC encoding
 or decoding mode - it probably shouldn't be used mid performance or
 playback unless you seek odd side effects.
+
+If a RPN or NRPN is active, this 14 bit mode will not have an effect on CC6.
+See </set_set_rpn_14bit_mode> and </set_nrpn_14bit_mode>
 
 =cut
 
