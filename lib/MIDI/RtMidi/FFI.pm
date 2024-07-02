@@ -86,6 +86,9 @@ BEGIN {
         RTMIDI_API_WINDOWS_MM   => 4,
         RTMIDI_API_RTMIDI_DUMMY => 5,
         RTMIDI_API_NUM          => 6,
+        RTMIDI_API_WEB_MIDI_API => 5,
+        RTMIDI_API_WINDOWS_UWP  => 5,
+        RTMIDI_API_ANDROID      => 5,
     };
 
     # These changes are not reflected in the RtMidi C header in v5
