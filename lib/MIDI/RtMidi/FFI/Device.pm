@@ -1940,7 +1940,7 @@ An Audio Unit named DLSMusicDevice is available for use within GarageBand,
 Logic, and other Digital Audio Workstation (DAW) software on Mac OS X.
 
 If you wish to use banks other than the default QuickTime set, place
-them in ~/Library/Audio/Sounds/Banks/. You may now create a new track
+them in C<~/Library/Audio/Sounds/Banks/>. You may now create a new track
 within GarageBand or Logic with the DLSMusicDevice instrument, and
 select your Sound Bank within the settings for this instrument.
 
