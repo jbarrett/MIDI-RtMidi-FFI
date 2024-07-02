@@ -6,9 +6,6 @@ use Test::Lib;
 use Time::HiRes qw/ usleep time /;
 
 use MIDI::RtMidi::FFI::Device;
-my $dev = RtMidiOut->new( api_name => 'dummy' );
-$dev->_init_timestamp;
-
 use MIDI::RtMidi::FFI::TestUtils;
 
 plan skip_all => "Sanity check failed" unless sanity_check;
@@ -16,32 +13,6 @@ plan skip_all => 'Cannot open virtual ports on this platform' if no_virtual;
 
 my ( $in, $out ) = ( RtMidiIn->new, RtMidiOut->new );
 connect_devices( $in, $out );
-
-sub test_cc {
-    my $mode = $out->get_14bit_mode // 'disabled';
-    my ( $tests ) = @_;
-    my $testnum = 0;
-    for my $test ( @{ $tests } ) {
-        ++$testnum;
-        for my $outmsg ( @{ $test->{ out } } ) {
-            $out->cc( @{ $outmsg } );
-        }
-        my $t = time;
-        while ( 1 ) {
-            if ( time - $t > .5 ) {
-                ok 0, "Timed out waiting for message $mode:$testnum";
-                last;
-            }
-            my $inmsg = $in->get_message_decoded;
-            if ( $inmsg ) {
-                my $intest = shift @{ $test->{ in } };
-                is( $inmsg, [ control_change => @{ $intest } ], "$mode:$testnum" );
-                last unless @{ $test->{ in } };
-            }
-            usleep 500;
-        }
-    }
-}
 
 $out->set_14bit_mode( 'await' ); # same as 'midi'
 my $tests = [
@@ -70,7 +41,7 @@ my $tests = [
         in  => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
     },
 ];
-test_cc( $tests );
+test_cc( $in, $out, $tests );
 
 $out->set_14bit_mode( 'pair' );
 $tests = [
@@ -99,7 +70,7 @@ $tests = [
         in  => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
     },
 ];
-test_cc( $tests );
+test_cc( $in, $out, $tests );
 
 $out->set_14bit_mode( 'backwards' );
 $tests = [
@@ -128,7 +99,7 @@ $tests = [
         in  => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
     },
 ];
-test_cc( $tests );
+test_cc( $in, $out, $tests );
 
 $out->set_14bit_mode( 'backwait' );
 $tests = [
@@ -157,7 +128,7 @@ $tests = [
         in  => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
     },
 ];
-test_cc( $tests );
+test_cc( $in, $out, $tests );
 
 # MSB/LSB pair, MSB on high controller
 $out->set_14bit_mode( 'doubleback' );
@@ -183,7 +154,7 @@ $tests = [
         in  => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
     },
 ];
-test_cc( $tests );
+test_cc( $in, $out, $tests );
 
 # LSB/MSB pair, MSB on high controller
 $out->set_14bit_mode( 'bassack' );
@@ -209,7 +180,7 @@ $tests = [
         in  => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
     },
 ];
-test_cc( $tests );
+test_cc( $in, $out, $tests );
 
 # MIDI 1.0 compatible callback
 sub callback {
@@ -250,7 +221,11 @@ $tests = [
         in  => [ [ 0x01, 0x48, 0x7F ], [ 0x03, 0x6F, 0x00 ], [ 0x0F, 0x5A, 0x5A ] ],
     },
 ];
-test_cc( $tests );
+test_cc( $in, $out, $tests );
+
+$out->set_14bit_mode( 'My son is also named bort' );
+my $e = dies { $out->cc( 0x01, 0x01, 0x1337 ) };
+like $e, qr/Unknown 14 bit midi mode: My son is also named bort/;
 
 # Fix this - SIGSEGV if don't explicitly tear down instances
 undef $in; undef $out;

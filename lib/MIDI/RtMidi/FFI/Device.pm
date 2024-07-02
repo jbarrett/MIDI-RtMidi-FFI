@@ -279,6 +279,28 @@ can be found in L</14-bit Control Change Modes>
 
 =item *
 
+B<rpn_14bit_mode> -
+Sets 14-bit behaviour for RPN control change messages on CC6.
+One of 'midi', 'pair', 'await', 'backwards', 'doubleback' or 'bassack'. More
+information on these options can be found in L</14-bit Control Change Modes>.
+
+The value 'midi' is recommended.
+
+This is for type 'out' only - RPN decoding is not currently implemented.
+
+=item *
+
+B<nrpn_14bit_mode> -
+Sets 14-bit behaviour for NRPN control change messages on CC6.
+One of 'midi', 'pair', 'await', 'backwards', 'doubleback' or 'bassack'. More
+information on these options can be found in L</14-bit Control Change Modes>
+
+The value 'midi' is recommended.
+
+This is for type 'out' only - NRPN decoding is not currently implemented.
+
+=item *
+
 B<bufsize> -
 (Type 'in' only) An alias for B<queue_size_limit>.
 
@@ -307,7 +329,9 @@ sub new {
         ? bless( $args[0], $class )
         : bless( { @args }, $class );
     $self->{type} //= 'out';
-    $self->{ '14_bit_mode' } = $self->{ '14_bit_mode' } || $self->{ '14_bit_callback' };
+    $self->{ '14bit_mode' } = $self->{ '14bit_mode' } || $self->{ '14bit_callback' };
+    $self->{ rpn_14bit_mode } = $self->{ rpn_14bit_mode } || $self->{ rpn_14bit_callback };
+    $self->{ nrpn_14bit_mode } = $self->{ nrpn_14bit_mode } || $self->{ nrpn_14bit_callback };
     $self->{ignore_sysex} //= 1;
     $self->{ignore_timing} //= 1;
     $self->{ignore_sensing} //= 1;
@@ -871,7 +895,21 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 sub send_message_encoded {
     my ( $self, @event ) = @_;
     if ( $event[0] eq 'control_change' ) {
-        if ( $event[2] < 32 && $self->{ '14bit_mode' } ) {
+        my $rpn = $self->get_rpn( $event[1] );
+        my $nrpn = $self->get_nrpn( $event[1] );
+        if ( ( $rpn || $nrpn ) && $event[2] == 6 ) {
+            if ( $rpn && $self->get_rpn_14bit_mode ) {
+                my $method = $self->resolve_cc_encoder( $self->{ 'rpn_14bit_mode' } )
+                    // croak "Unknown RPN 14 bit midi mode: $self->{ 'rpn_14bit_mode' }";
+                return $method->( $self, @event[1..$#event ] );
+            }
+            elsif ( $nrpn && $self->get_nrpn_14bit_mode ) {
+                my $method = $self->resolve_cc_encoder( $self->{ 'nrpn_14bit_mode' } )
+                    // croak "Unknown NRPN 14 bit midi mode: $self->{ 'nrpn_14bit_mode' }";
+                return $method->( $self, @event[1..$#event ] );
+            }
+        }
+        elsif ( $event[2] < 32 && $self->{ '14bit_mode' } ) {
             my $method = $self->resolve_cc_encoder( $self->{ '14bit_mode' } )
                  // croak "Unknown 14 bit midi mode: $self->{ '14bit_mode' }";
             return $method->( $self, @event[1..$#event ] );
@@ -901,8 +939,9 @@ sub send_message_encoded_cb {
 
 Alias for L</send_message_encoded>, for backwards compatibility.
 
-B<NB> Previous versions of this module stripped channel data from messages.
-This is no longer the case - channel should be provided where necessary.
+B<NB> Previous versions of this module erroneously stripped channel data from
+messages. This is no longer the case - channel should be provided where
+necessary.
 
 =cut
 
@@ -1006,6 +1045,9 @@ cache of control change values.
 This method is intended to help find the most compatible 14 bit CC encoding
 or decoding mode - it probably shouldn't be used mid performance or
 playback unless you seek odd side effects.
+
+If a RPN or NRPN is active, this 14 bit mode will not have an effect on CC6.
+See </set_set_rpn_14bit_mode> and </set_nrpn_14bit_mode>
 
 =cut
 
@@ -1167,6 +1209,250 @@ sub _create_device {
         $self->{ignore_sensing},
     );
 }
+
+=head2 open_rpn
+
+    $device->open_rpn( $channel, $msb, $lsb );
+    $device->open_rpn( 1, 0, 1 );
+
+Open a Registered Parameter Number (RPN) for setting with later control change
+messages for CC6. This method will also close any open RPN or NRPN.
+
+=cut
+
+sub open_rpn {
+    my ( $self, $channel, $msb, $lsb ) = @_;
+    $self->close_rpn( $channel );
+    $self->{ open_rpn }->{ $channel } = [ $msb, $lsb ];
+    $self->cc( $channel, 101, $msb );
+    $self->cc( $channel, 100, $lsb );
+}
+
+=head2 open_nrpn
+
+    $device->open_rpn( $channel, $msb, $lsb );
+    $device->open_rpn( 1, 0, 1 );
+
+Open a Non-Registered Parameter Number (NRPN) for setting with later control
+change messages for CC6. This method will also close any open RPN or NRPN.
+
+=cut
+
+sub open_nrpn {
+    my ( $self, $channel, $msb, $lsb ) = @_;
+    $self->close_nrpn( $channel );
+    $self->{ open_nrpn }->{ $channel } = [ $msb, $lsb ];
+    $self->cc( $channel, 99, $msb );
+    $self->cc( $channel, 98, $lsb );
+}
+
+=head2 close_rpn
+
+    $device->close_rpn( $channel );
+
+Close any open RPN on the given channel.
+
+=cut
+
+sub close_rpn {
+    my ( $self, $channel ) = @_;
+    delete $self->{ open_rpn }->{ $channel };
+    delete $self->{ open_nrpn }->{ $channel };
+    $self->cc( $channel, 101, 127 );
+    $self->cc( $channel, 100, 127 );
+}
+
+=head2 close_nrpn
+
+    $device->close_rpn( $channel );
+
+Close any open NRPN on the given channel.
+
+=cut
+
+*close_nrpn = \&close_rpn;
+
+=head1 get_rpn
+
+    $device->get_nrpn( $channel );
+
+Get the currently open RPN for the given channel.
+
+=cut
+
+sub get_rpn {
+    my ( $self, $channel ) = @_;
+    $self->{ open_rpn }->{ $channel };
+}
+
+=head1 get_nrpn
+
+    $device->get_rpn( $channel );
+
+Get the currently open RPN for the given channel.
+
+=cut
+
+sub get_nrpn {
+    my ( $self, $channel ) = @_;
+    $self->{ open_nrpn }->{ $channel };
+}
+
+=head2 send_rpn
+
+    $device->send_rpn( $channel, $msb, $lsb, $value );
+
+Send a single value for the given RPN. This method is suitable for individual
+settings accessed via RPN. It will open the RPN, send the passed value to
+CC6 on the passed channel, then close the RPN.
+
+A 14 bit value is expected if rpn_14bit_mode is set.
+
+=cut
+
+sub send_rpn {
+    my ( $self, $channel, $msb, $lsb, $value ) = @_;
+    $self->open_rpn( $channel, $msb, $lsb );
+    $self->cc( $channel, 0x06, $value );
+    $self->close_rpn( $channel );
+}
+
+=head2 rpn
+
+    $device->rpn( $channel, $msb, $lsb, $value );
+
+An alias for L</send_rpn>.
+
+=cut
+
+*rpn = \&send_rpn;
+
+=head2 send_nrpn
+
+    $device->send_nrpn( $channel, $msb, $lsb, $value );
+
+Send a single value for the given NRPN. This method is suitable for single
+setting values accessed via NRPN. It will open the NRPN, send the passed value
+to CC6 on the passed channel, then close the NRPN.
+
+A 14 bit value is expected if nrpn_14bit_mode is set.
+
+If sending modulation to a NRPN, calling L</open_nrpn> and sending a stream of
+control change messages separately is recommended:
+
+    $device->open_nrpn( $channel, 1, 1 );
+    $device->cc( $channel, 6, $value )
+    # ...more cc() calls here
+    $device->close_nrpn( $channel );
+
+=cut
+
+sub send_nrpn {
+    my ( $self, $channel, $msb, $lsb, $value ) = @_;
+    $self->open_nrpn( $channel, $msb, $lsb );
+    $self->cc( $channel, 0x06, $value );
+    $self->close_nrpn( $channel );
+}
+
+=head2 nrpn
+
+    $device->nrpn( $channel, $msb, $lsb, $value );
+
+An alias for L</send_nrpn>.
+
+=cut
+
+*nrpn = \&send_nrpn;
+
+=head2 get_rpn_14bit_mode
+
+    $self->get_rpn_14bit_mode;
+
+Get the currently in-use RPN 14 bit mode.
+
+=cut
+
+sub get_rpn_14bit_mode { $_[0]->{ 'rpn_14bit_mode' } }
+*get_rpn_14bit_callback = \&get_rpn_14bit_mode;
+
+=head2 get_nrpn_14bit_mode
+
+    $self->get_nrpn_14bit_mode;
+
+Get the currently in-use NRPN 14 bit mode.
+
+=cut
+
+sub get_nrpn_14bit_mode { $_[0]->{ 'nrpn_14bit_mode' } }
+*get_nrpn_14bit_callback = \&get_nrpn_14bit_mode;
+
+=head2 set_rpn_14bit_mode
+
+    $device->set_rpn_14bit_mode( 'await' );
+    $device->set_rpn_14bit_mode( $callback );
+    $device->set_rpn_14bit_mode( $callback, 'no purge' );
+
+Sets the RPN 14 bit mode. See L</14-bit Control Change Modes>, similar to
+L</set_14bit_mode>.
+
+=cut
+
+sub set_rpn_14bit_mode {
+    my ( $self, $mode, $nopurge ) = @_;
+    $self->purge_last_events( 'control_change' ) unless $nopurge;
+    $self->{ 'rpn_14bit_mode' } = $mode;
+}
+*set_rpn_14bit_callback = \&set_rpn_14bit_mode;
+
+=head2 set_nrpn_14bit_mode
+
+    $device->set_nrpn_14bit_mode( 'await' );
+    $device->set_nrpn_14bit_mode( $callback );
+    $device->set_nrpn_14bit_mode( $callback, 'no purge' );
+
+Sets the NRPN 14 bit mode. See L</14-bit Control Change Modes>, similar to
+L</set_14bit_mode>.
+
+=cut
+
+sub set_nrpn_14bit_mode {
+    my ( $self, $mode, $nopurge ) = @_;
+    $self->purge_last_events( 'control_change' ) unless $nopurge;
+    $self->{ 'nrpn_14bit_mode' } = $mode;
+}
+*set_nrpn_14bit_callback = \&set_nrpn_14bit_mode;
+
+=head2 disable_rpn_14bit_mode
+
+    $device->disable_rpn_14bit_mode;
+    $device->disable_rpn_14bit_mode( 'no purge' );
+
+Disables the RPN 14 bit mode. See L</14-bit Control Change Modes>.
+
+=cut
+
+sub disable_rpn_14bit_mode {
+    my ( $self, $nopurge ) = @_;
+    $self->purge_last_events( 'control_change' ) unless $nopurge;
+    delete $self->{ 'rpn_14bit_mode' };
+}
+*disable_rpn_14bit_callback = \&disable_rpn_14bit_mode;
+
+=head2 disable_nrpn_14bit_mode
+
+    $device->disable_nrpn_14bit_mode;
+    $device->disable_nrpn_14bit_mode( 'no purge' );
+
+Disables the NRPN 14 bit mode. See L</14-bit Control Change Modes>.
+
+=cut
+
+sub disable_nrpn_14bit_mode {
+    my ( $self, $nopurge ) = @_;
+    $self->purge_last_events( 'control_change' ) unless $nopurge;
+    delete $self->{ 'nrpn_14bit_mode' };
+}
+*disable_nrpn_14bit_callback = \&disable_nrpn_14bit_mode;
 
 my $free_dispatch = {
     in  => \&rtmidi_in_free,
@@ -1699,9 +1985,18 @@ This software has been fairly well exercised on Linux and Windows, but not
 so much on MacOS / CoreMIDI. I am interested in feedback on successes
 and failures on this platform.
 
+NRPN and 14 bit CC have not been tested on real hardware, though they work
+well in the "virtual" domain - for controlling software-defined instruments.
+
+L<Currently open MIDI::RtMidi::FFI issues on GitHub|https://github.com/jbarrett/MIDI-RtMidi-FFI/issues>
+
 =head1 SEE ALSO
 
 L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
+
+L<MIDI CC & NRPN database|https://midi.guide/>
+
+L<Phil Rees Music Tech page on NRPN/RPN|http://www.philrees.co.uk/nrpnq.htm>
 
 L<MIDI::RtMidi::FFI>
 
