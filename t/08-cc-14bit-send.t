@@ -223,6 +223,10 @@ $tests = [
 ];
 test_cc( $in, $out, $tests );
 
+$out->set_14bit_mode( 'My son is also named bort' );
+my $e = dies { $out->cc( 0x01, 0x01, 0x1337 ) };
+like $e, qr/Unknown 14 bit midi mode: My son is also named bort/;
+
 # Fix this - SIGSEGV if don't explicitly tear down instances
 undef $in; undef $out;
 
