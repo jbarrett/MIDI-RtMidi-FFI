@@ -924,7 +924,7 @@ sub send_message_encoded {
     $device->send_message_encoded_cb( @event );
 
 Type 'out' only. A variant of send_message_encoded for use within user-defined
-callbacks, as callbacks are invoked by send_message_encoded.
+callbacks handling 14 bit CC, as callbacks are invoked by send_message_encoded.
 
 =cut
 
