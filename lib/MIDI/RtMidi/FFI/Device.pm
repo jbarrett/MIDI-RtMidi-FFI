@@ -894,7 +894,6 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 
 sub send_message_encoded {
     my ( $self, @event ) = @_;
-    use DDP; p @event; warn join " !! ", caller(1);
     if ( $event[0] eq 'control_change' ) {
         my $nrpn = $self->get_nrpn( $event[1] );
         if ( $self->get_rpn( $event[1] ) && $event[2] == 6 && $self->get_rpn_14bit_mode ) {
