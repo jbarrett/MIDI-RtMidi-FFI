@@ -242,10 +242,10 @@ B<beats> and a B<pool> of possible durations.
 
 Synchronize the phrase parts, so that they are played simultaneously.
 
-=head2 Write
+=head2 Play
 
-Finally, write the score to a MIDI file, named after the program
-itself.
+Finally, play the score with an open MIDI driver, as described in
+L<MIDI::RtMidi::FFI>.
 
 =head2 Phrase
 
@@ -271,11 +271,13 @@ loud (C<fff>). This gives the sound a bit of dynamic texture.
 4. Return this anonymous subroutine to be gathered into a list of all
 drummer parts.
 
-=head1 REFERENCES
+=head1 SEE ALSO
 
 The writeup: L<https://ology.github.io/2020/11/01/imitating-a-drum-circle/>
 
 The Wikipedia entry: L<https://en.wikipedia.org/wiki/Drum_circle>
+
+Real-time MIDI: L<MIDI::RtMidi::FFI>
 
 =head1 AUTHOR
 
@@ -289,6 +291,3 @@ This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-
-
