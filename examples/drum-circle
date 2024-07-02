@@ -152,7 +152,7 @@ package ScorePlayer {
             @{ $drummer->score->{ Score } }
         ];
         ${ $drummer->score->{ Time } } = 0;
-        delete $self->{common}->{seen};
+        $self->{common}->{seen} = {};
     }
 
     sub play {
@@ -172,7 +172,7 @@ package ScorePlayer {
                 $self->device->send_event( $event->[0] => @{ $event }[ 2 .. $#$event ] );
             }
             sleep(1);
-            $self->reset_score( $d ); # not sorry
+            $self->reset_score( $d );
         }
     }
 };
