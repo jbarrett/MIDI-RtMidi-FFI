@@ -989,38 +989,6 @@ sub PANIC {
     }
 }
 
-
-=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
-
-Wrapper methods for L</send_message_encoded>, e.g.
-
-    $device->note_on( 0x00, 0x40, 0x5a );
-
-is equivalent to:
-
-    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
-
-=cut
-
-*note_off = sub { shift->send_event( note_off => @_ ) };
-*note_on = sub { shift->send_event( note_on => @_ ) };
-*control_change = sub { shift->send_event( control_change => @_ ) };
-*patch_change = sub { shift->send_event( patch_change => @_ ) };
-*key_after_touch = sub { shift->send_event( key_after_touch => @_ ) };
-*channel_after_touch = sub { shift->send_event( channel_after_touch => @_ ) };
-*pitch_wheel_change = sub { shift->send_event( pitch_wheel_change => @_ ) };
-*sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
-*sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
-*sysex = sub { shift->send_event( sysex => @_ ) };
-
-=head2 cc
-
-An alias for control_change.
-
-=cut
-
-*cc = \&control_change;
-
 =head2 get_14bit_mode
 
     $device->get_14bit_mode;
@@ -1453,6 +1421,37 @@ sub disable_nrpn_14bit_mode {
     delete $self->{ 'nrpn_14bit_mode' };
 }
 *disable_nrpn_14bit_callback = \&disable_nrpn_14bit_mode;
+
+=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
+
+Wrapper methods for L</send_message_encoded>, e.g.
+
+    $device->note_on( 0x00, 0x40, 0x5a );
+
+is equivalent to:
+
+    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+
+=cut
+
+*note_off = sub { shift->send_event( note_off => @_ ) };
+*note_on = sub { shift->send_event( note_on => @_ ) };
+*control_change = sub { shift->send_event( control_change => @_ ) };
+*patch_change = sub { shift->send_event( patch_change => @_ ) };
+*key_after_touch = sub { shift->send_event( key_after_touch => @_ ) };
+*channel_after_touch = sub { shift->send_event( channel_after_touch => @_ ) };
+*pitch_wheel_change = sub { shift->send_event( pitch_wheel_change => @_ ) };
+*sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
+*sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
+*sysex = sub { shift->send_event( sysex => @_ ) };
+
+=head2 cc
+
+An alias for control_change.
+
+=cut
+
+*cc = \&control_change;
 
 my $free_dispatch = {
     in  => \&rtmidi_in_free,
