@@ -937,8 +937,9 @@ sub send_message_encoded_cb {
 
 Alias for L</send_message_encoded>, for backwards compatibility.
 
-B<NB> Previous versions of this module stripped channel data from messages.
-This is no longer the case - channel should be provided where necessary.
+B<NB> Previous versions of this module erroneously stripped channel data from
+messages. This is no longer the case - channel should be provided where
+necessary.
 
 =cut
 
@@ -1959,9 +1960,18 @@ This software has been fairly well exercised on Linux and Windows, but not
 so much on MacOS / CoreMIDI. I am interested in feedback on successes
 and failures on this platform.
 
+NRPN and 14 bit CC have not been tested on real hardware, though they work
+well in the "virtual" domain - for controlling software-defined instruments.
+
+L<Currently open MIDI::RtMidi::FFI issues on GitHub|https://github.com/jbarrett/MIDI-RtMidi-FFI/issues>
+
 =head1 SEE ALSO
 
 L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
+
+L<MIDI CC & NRPN database|https://midi.guide/>
+
+L<Phil Rees Music Tech page on NRPN/RPN|http://www.philrees.co.uk/nrpnq.htm>
 
 L<MIDI::RtMidi::FFI>
 
