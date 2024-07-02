@@ -1846,7 +1846,7 @@ Channel must be specified in any message related to performance, such as
 
 =head2 Messages and Events
 
-A MIDI message is (usually) a short series of bytes sent on a port, instructing
+A MIDI message is a (usually) short series of bytes sent on a port, instructing
 an instrument on how to behave - which notes to play, when, how loudly, with which
 timbral variations & expression, and so on. They may also contain configuration
 info or some other sort of instruction.
