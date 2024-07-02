@@ -134,9 +134,27 @@ package ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
         die "Callback required" unless $opts{ callback };
-        $opts{port} //= qr/wavetable|loopmidi|timidity/i;
         $opts{device} = RtMidiOut->new;
-        $opts{device}->open_port_by_name( $opts{port} );
+
+        # Linux: Timidity support requires timidity in daemon mode
+        # If your distro does not install a service, do: timidity -iAD
+        # FluidSynth is an alternative to Timidity++
+        $opts{port} //= qr/wavetable|loopmidi|timidity|fluid/i;
+
+        # MacOS: You can get General MIDI via DLSMusicDevice within
+        # Logic or Garageband. You will need a soundfont containing
+        # drum patches in '~/Library/Audio/Sounds/Banks/'
+        # and DLSMusicDevice open in GarageBand / Logic with this
+        # sound front selected.
+        # DLSMusicDevice should receive input from the virtual port
+        # opened below.
+        # See MIDI::RtMidi::FFI::Device docs for more info.
+        if ( $^O eq 'darwin' ) {
+            $opts{device}->open_virtual_port('Drum Circle') if $^O eq 'darwin';
+        }
+        else {
+            $opts{device}->open_port_by_name( $opts{port} );
+        }
         bless \%opts, $class;
     }
 
