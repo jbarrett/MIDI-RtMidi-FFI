@@ -1958,7 +1958,7 @@ The 'MUS 214: MIDI Composition' channel on YouTube has a
 L<Video on setting up DLSMusicDevice in Logic|https://youtu.be/YIb-H10yzyI>.
 
 A potential alternative option is FluidSynth. This has more limited support
-for DLS patches but should load SF2/3 banks just fine. See
+for DLS banks but should load SF2/3 banks just fine. See
 L</General MIDI on Linux> for links to get started using FluidSynth.
 
 A typical FluidSynth invocation on MacOS might be:
