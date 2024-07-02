@@ -1715,4 +1715,14 @@ All comments and contributions welcome.
 
 Please direct all requests to L<https://github.com/jbarrett/MIDI-RtMidi-FFI/issues>
 
+=head1 CONTRIBUTORS
+
+=over 4
+
+=item *
+
+Gene Boggs <gene@cpan.org>
+
+=back
+
 =cut
