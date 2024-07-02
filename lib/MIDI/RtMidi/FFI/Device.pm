@@ -1240,7 +1240,7 @@ Close any open NRPN on the given channel.
 
 *close_nrpn = \&close_rpn;
 
-=head1 get_rpn
+=head2 get_rpn
 
     $device->get_nrpn( $channel );
 
@@ -1253,7 +1253,7 @@ sub get_rpn {
     $self->{ open_rpn }->{ $channel };
 }
 
-=head1 get_nrpn
+=head2 get_nrpn
 
     $device->get_rpn( $channel );
 
