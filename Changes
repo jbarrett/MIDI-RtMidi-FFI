@@ -7,6 +7,7 @@ Revision history for perl module MIDI::RtMidi::FFI
   - Support for encode / decode of timecode, clock, start, continue, stop and more
   - Methods to retrieve all available device info (get_all_port_{nums,names})
   - MIDI panic methods
+  - New example : drum circle - thanks to Gene Boggs (GENE)
   - Expanded docs
     
 0.05 2023-09-18
