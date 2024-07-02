@@ -19,7 +19,7 @@ $device->open_virtual_port( 'foo' );
 # MIDI device on your system, such as a loopback device, or virtual or
 # hardware synth. Your device must be connected to some sort of synth to
 # make noise.
-$device->open_port_by_name( qr/wavetable|loopmidi|timidity|dls/i );
+$device->open_port_by_name( qr/wavetable|loopmidi|timidity/i );
 
 # Now that a port is open we can start to send MIDI messages, such as
 # this annoying sequence
@@ -39,6 +39,8 @@ while ( 1 ) {
 }
 ```
 
+Complete documentation for the current version may be found on the [MIDI::RtMidi::FFI::Device MetaCPAN page](https://metacpan.org/pod/MIDI::RtMidi::FFI::Device).
+
 ## Installing
 
 With [cpanminus](https://metacpan.org/pod/App::cpanminus):
@@ -50,4 +52,11 @@ $ cpanm MIDI::RtMidi::FFI
 ## Bugs, Feedback
 
 [Open an issue](https://github.com/jbarrett/MIDI-RtMidi-FFI/issues)
-or [start a discussion](https://github.com/jbarrett/MIDI-RtMidi-FFI/discussions).
+or [start a discussion](https://github.com/jbarrett/MIDI-RtMidi-FFI/discussions)!
+
+## Copyright, License
+
+This software is copyright (c) 2024 by John Barrett.
+
+This is free software; you can redistribute it and/or modify it under the
+[same terms as the Perl 5 programming language system itself](https://dev.perl.org/licenses/).
