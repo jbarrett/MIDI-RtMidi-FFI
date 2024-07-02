@@ -1628,15 +1628,17 @@ behind us.  These days, General MIDI is usually supported in software.
 
 A commonly available General MIDI soft-synth is
 L<TiMidity++|https://timidity.sourceforge.net/> - a version is likely packaged
-for your distro. You may also need to install a soundfont. This package may or
+for your distro. This package may or
 may not install a timidity service (it may be packaged separately as
-timidity-daemon).  If not, you can quickly make a timidity port available by
+timidity-daemon). If not, you can quickly make a timidity port available by
 running:
 
     $ timidity -iAD
 
+You may also need to install and configure a soundfont for TiMidity++.
+
 Another option is FluidSynth, which should also be packaged for any given
-distro. To run FluidSynth you'll need a SF2 file. See
+distro. To run FluidSynth you'll need a SF2 or SF3 soundfont file. See
 L<Getting started with fluidsynth|https://github.com/FluidSynth/fluidsynth/wiki/GettingStarted>
 and
 L<Example Command Lines to start fluidsynth|https://github.com/FluidSynth/fluidsynth/wiki/ExampleCommandLines>.
