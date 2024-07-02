@@ -36,6 +36,9 @@ $out->cc( 0x01, 0x06, 0x1337 );
 
 $tests = [
     {   # No 14 bit mode set for RPN - only LSB should be recvd
+        # - This is not reliable or well defined behaviour
+        #   Unexpected bytes > 0x7F may be interpreted as
+        #   unwanted messages! Set your modes correctly
         out => [],
         in  => [ [ 0x01, 0x06, 0x37 ] ],
     }
@@ -102,6 +105,65 @@ $tests = [
                  [ 0x01, 0x07 | 0x20, 0x37 ], [ 0x01, 0x07, 0x26 ],
                  [ 0x01, 0x06 | 0x20, 0x37 ], [ 0x01, 0x06, 0x26 ],
                  [ 0x01, 0x7F, 0x37 ] ],
+    }
+];
+test_cc( $in, $out, $tests );
+
+$out->disable_rpn_14bit_mode;
+$out->set_14bit_mode('midi');
+
+$out->rpn( 0x05, 0x02, 0x03, 0x3F );
+
+$tests = [
+    {   # A complete 7 bit RPN transaction
+        out => [],
+        in  => [ [ 0x05, 101, 0x7F ], [ 0x05, 100, 0x7F ],
+                 [ 0x05, 101, 0x02 ], [ 0x05, 100, 0x03 ],
+                 [ 0x05, 0x06, 0x3F ],
+                 [ 0x05, 101, 0x7F ], [ 0x05, 100, 0x7F ] ]
+    }
+];
+test_cc( $in, $out, $tests );
+
+$out->set_rpn_14bit_mode( 'midi' );
+$out->rpn( 0x05, 0x02, 0x03, 0x3FFF );
+
+$tests = [
+    {   # A complete 14 bit RPN transaction
+        out => [],
+        in  => [ [ 0x05, 101, 0x7F ], [ 0x05, 100, 0x7F ],
+                 [ 0x05, 101, 0x02 ], [ 0x05, 100, 0x03 ],
+                 [ 0x05, 0x06, 0x3FFF >> 7 ], [ 0x05, 0x06 | 0x20, 0x3FFF & 0x7F ],
+                 [ 0x05, 101, 0x7F ], [ 0x05, 100, 0x7F ] ]
+    }
+];
+test_cc( $in, $out, $tests );
+
+$out->disable_nrpn_14bit_mode;
+
+$out->nrpn( 0x05, 0x02, 0x03, 0x3F );
+
+$tests = [
+    {   # A complete 7 bit NRPN transaction
+        out => [],
+        in  => [ [ 0x05, 101, 0x7F ], [ 0x05, 100, 0x7F ],
+                 [ 0x05, 99,  0x02 ], [ 0x05, 98,  0x03 ],
+                 [ 0x05, 0x06, 0x3F ],
+                 [ 0x05, 101, 0x7F ], [ 0x05, 100, 0x7F ] ]
+    }
+];
+test_cc( $in, $out, $tests );
+
+$out->set_nrpn_14bit_mode( 'midi' );
+$out->nrpn( 0x05, 0x02, 0x03, 0x3FFF );
+
+$tests = [
+    {   # A complete 14 bit NRPN transaction
+        out => [],
+        in  => [ [ 0x05, 101, 0x7F ], [ 0x05, 100, 0x7F ],
+                 [ 0x05, 99,  0x02 ], [ 0x05, 98,  0x03 ],
+                 [ 0x05, 0x06, 0x3FFF >> 7 ], [ 0x05, 0x06 | 0x20, 0x3FFF & 0x7F ],
+                 [ 0x05, 101, 0x7F ], [ 0x05, 100, 0x7F ] ]
     }
 ];
 test_cc( $in, $out, $tests );
