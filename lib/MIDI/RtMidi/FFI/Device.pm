@@ -1927,7 +1927,7 @@ distro. To run FluidSynth you'll need a SF2 or SF3 soundfont file. See
 L<Getting started with fluidsynth|https://github.com/FluidSynth/fluidsynth/wiki/GettingStarted>
 and
 L<Example Command Lines to start fluidsynth|https://github.com/FluidSynth/fluidsynth/wiki/ExampleCommandLines>.
-<FluidR3_GM.sf2 Professional|https://musical-artifacts.com/artifacts/738>
+L<FluidR3_GM.sf2 Professional|https://musical-artifacts.com/artifacts/738>
 is a high quality sound font with a complete set of General MIDI instruments.
 
 A typical FluidSynth invocation on Linux might be:
