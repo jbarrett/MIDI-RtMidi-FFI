@@ -149,12 +149,9 @@ package ScorePlayer {
         # DLSMusicDevice should receive input from the virtual port
         # opened below.
         # See MIDI::RtMidi::FFI::Device docs for more info.
-        if ( $^O eq 'darwin' ) {
-            $opts{device}->open_virtual_port('Drum Circle') if $^O eq 'darwin';
-        }
-        else {
-            $opts{device}->open_port_by_name( $opts{port} );
-        }
+        $opts{device}->open_virtual_port('Drum Circle') if $^O eq 'darwin';
+        # Alternatively you can use FluidSynth
+        $opts{device}->open_port_by_name( $opts{port} );
         bless \%opts, $class;
     }
 
