@@ -4,7 +4,7 @@ Revision history for perl module MIDI::RtMidi::FFI
 
   - Support for RtMidi v6
   - Support for send / receive of 14-bit control changes
-  - Support for sending RPN / NRPN events
+  - Support for sending RPN / NRPN parameters
   - Support for encode / decode of timecode, clock, start, continue, stop and more
   - Methods to retrieve all available device info (->get_all_port_{nums,names})
   - "Shortcut" methods for send_message_encoded: ->note_on, ->note_off, ->cc ...
