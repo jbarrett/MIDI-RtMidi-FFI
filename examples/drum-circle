@@ -160,6 +160,10 @@ package ScorePlayer {
 
     sub device { shift->{ device } }
 
+    # This manipulates internals of MIDI::Score objects and
+    # hashes used by drum-circle - doing this isn't a good
+    # idea - skip to `sub play` to see the interesting piece
+    # of this example.
     sub reset_score {
         my ( $self, $drummer ) = @_;
         # sorry
