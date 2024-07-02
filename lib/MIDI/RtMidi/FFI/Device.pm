@@ -1314,8 +1314,18 @@ sub send_rpn {
     my ( $self, $channel, $msb, $lsb, $value ) = @_;
     $self->open_rpn( $channel, $msb, $lsb );
     $self->cc( $channel, 0x06, $value );
-    $self->close_rpn;
+    $self->close_rpn( $channel );
 }
+
+=head2 rpn
+
+    $device->rpn( $channel, $msb, $lsb, $value );
+
+An alias for L</send_rpn>.
+
+=cut
+
+*rpn = \&send_rpn;
 
 =head2 send_nrpn
 
@@ -1333,7 +1343,7 @@ control change messages separately is recommended:
     $device->open_nrpn( $channel, 1, 1 );
     $device->cc( $channel, 6, $value )
     # ...more cc() calls here
-    $device->close_nrpn;
+    $device->close_nrpn( $channel );
 
 =cut
 
@@ -1341,8 +1351,18 @@ sub send_nrpn {
     my ( $self, $channel, $msb, $lsb, $value ) = @_;
     $self->open_nrpn( $channel, $msb, $lsb );
     $self->cc( $channel, 0x06, $value );
-    $self->close_rpn;
+    $self->close_nrpn( $channel );
 }
+
+=head2 nrpn
+
+    $device->nrpn( $channel, $msb, $lsb, $value );
+
+An alias for L</send_nrpn>.
+
+=cut
+
+*nrpn = \&send_nrpn;
 
 =head2 get_rpn_14bit_mode
 
@@ -1365,15 +1385,6 @@ Get the currently in-use NRPN 14 bit mode.
 
 sub get_nrpn_14bit_mode { $_[0]->{ 'nrpn_14bit_mode' } }
 *get_nrpn_14bit_callback = \&get_nrpn_14bit_mode;
-
-=head2 disable_rpn_14bit_mode
-
-    $device->disable_rpn_14bit_mode;
-    $device->disable_rpn_14bit_mode( 'no purge' );
-
-Disables the RPN 14 bit mode. See L</14-bit Control Change Modes>.
-
-=cut
 
 =head2 set_rpn_14bit_mode
 
@@ -1410,6 +1421,15 @@ sub set_nrpn_14bit_mode {
     $self->{ 'nrpn_14bit_mode' } = $mode;
 }
 *set_nrpn_14bit_callback = \&set_nrpn_14bit_mode;
+
+=head2 disable_rpn_14bit_mode
+
+    $device->disable_rpn_14bit_mode;
+    $device->disable_rpn_14bit_mode( 'no purge' );
+
+Disables the RPN 14 bit mode. See L</14-bit Control Change Modes>.
+
+=cut
 
 sub disable_rpn_14bit_mode {
     my ( $self, $nopurge ) = @_;
