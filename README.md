@@ -19,7 +19,7 @@ $device->open_virtual_port( 'foo' );
 # MIDI device on your system, such as a loopback device, or virtual or
 # hardware synth. Your device must be connected to some sort of synth to
 # make noise.
-$device->open_port_by_name( qr/wavetable|loopmidi|timidity|dls/i );
+$device->open_port_by_name( qr/wavetable|loopmidi|timidity/i );
 
 # Now that a port is open we can start to send MIDI messages, such as
 # this annoying sequence

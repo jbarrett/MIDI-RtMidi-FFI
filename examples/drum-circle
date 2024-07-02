@@ -134,9 +134,7 @@ package ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
         die "Callback required" unless $opts{ callback };
-        # Timidity support requires timidity in daemon mode (ALSA only)
-        # (Does CoreMIDI have a General MIDI device by default?)
-        $opts{port} //= qr/wavetable|loopmidi|timidity|dls/i;
+        $opts{port} //= qr/wavetable|loopmidi|timidity/i;
         $opts{device} = RtMidiOut->new;
         $opts{device}->open_port_by_name( $opts{port} );
         bless \%opts, $class;
