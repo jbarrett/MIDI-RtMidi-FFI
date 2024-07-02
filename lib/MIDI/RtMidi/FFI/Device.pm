@@ -329,9 +329,9 @@ sub new {
         ? bless( $args[0], $class )
         : bless( { @args }, $class );
     $self->{type} //= 'out';
-    $self->{ '14_bit_mode' } = $self->{ '14_bit_mode' } || $self->{ '14_bit_callback' };
-    $self->{ rpn_14_bit_mode } = $self->{ rpn_14_bit_mode } || $self->{ rpn_14_bit_callback };
-    $self->{ nrpn_14_bit_mode } = $self->{ nrpn_14_bit_mode } || $self->{ nrpn_14_bit_callback };
+    $self->{ '14bit_mode' } = $self->{ '14bit_mode' } || $self->{ '14bit_callback' };
+    $self->{ rpn_14bit_mode } = $self->{ rpn_14bit_mode } || $self->{ rpn_14bit_callback };
+    $self->{ nrpn_14bit_mode } = $self->{ nrpn_14bit_mode } || $self->{ nrpn_14bit_callback };
     $self->{ignore_sysex} //= 1;
     $self->{ignore_timing} //= 1;
     $self->{ignore_sensing} //= 1;
