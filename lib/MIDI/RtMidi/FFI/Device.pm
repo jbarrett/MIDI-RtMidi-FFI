@@ -62,9 +62,9 @@ my $rtmidi_api_names = {
     jack        => [ "Jack",               RTMIDI_API_UNIX_JACK ],
     winmm       => [ "Windows MultiMedia", RTMIDI_API_WINDOWS_MM ],
     dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ],
-    web         => [ "Web MIDI API",       RTMIDI_API_WEB_MIDI_API ],
-    winuwp      => [ "Windows UWP",        RTMIDI_API_WINDOWS_UWP ],
-    amidi       => [ "Android MIDI API",   RTMIDI_API_ANDROID ],
+    #web         => [ "Web MIDI API",       RTMIDI_API_WEB_MIDI_API ],
+    #winuwp      => [ "Windows UWP",        RTMIDI_API_WINDOWS_UWP ],
+    #amidi       => [ "Android MIDI API",   RTMIDI_API_ANDROID ],
 };
 
 my $byte_lookup = {
