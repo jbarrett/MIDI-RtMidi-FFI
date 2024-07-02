@@ -1,6 +1,6 @@
 Revision history for perl module MIDI::RtMidi::FFI
 
-0.0something 2024-07-sometime
+0.06 2024-07-02
 
   - Support for RtMidi v6
   - Support for send / receive of 14-bit control changes
