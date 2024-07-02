@@ -22,7 +22,7 @@ package MIDI::RtMidi::FFI::Device;
     # MIDI device on your system, such as a loopback device, or virtual or
     # hardware synth. Your device must be connected to some sort of synth to
     # make noise.
-    $device->open_port_by_name( qr/wavetable|loopmidi|timidity|dls/i );
+    $device->open_port_by_name( qr/wavetable|loopmidi|timidity|fluid/i );
     
     # Now that a port is open we can start to send MIDI messages, such as
     # this annoying sequence
@@ -1178,6 +1178,8 @@ sub DESTROY {
     # croak "Unable to free type : $self->{type}" unless $fn;
     # There is an extant issue around the Perl object lifecycle and C++ object lifecycle.
     # If we free the RtMidiPtr here, a double-free error may occur on process exit.
+    # https://github.com/jbarrett/MIDI-RtMidi-FFI/issues/8
+    #
     # For now, cancel the callback and close the port, then trust the process ...
     $self->cancel_callback;
     $self->close_port;
@@ -1618,6 +1620,63 @@ piano instrument:
     $device->note_on( 0x00, 0xc3, 0x7f );
     sleep( 1 );
     $device->note_off( 0x00, 0xc3 );
+
+=head1 General MIDI on Linux
+
+The days of consumer sound cards containing their own wavetable banks are
+behind us.  These days, General MIDI is usually supported in software.
+
+A commonly available General MIDI soft-synth is
+L<TiMidity++|https://timidity.sourceforge.net/> - a version is likely packaged
+for your distro. You may also need to install a soundfont. This package may or
+may not install a timidity service (it may be packaged separately as
+timidity-daemon).  If not, you can quickly make a timidity port available by
+running:
+
+    $ timidity -iAD
+
+Another option is FluidSynth, which should also be packaged for any given
+distro. To run FluidSynth you'll need a SF2 file. See
+L<Getting started with fluidsynth|https://github.com/FluidSynth/fluidsynth/wiki/GettingStarted>
+and
+L<Example Command Lines to start fluidsynth|https://github.com/FluidSynth/fluidsynth/wiki/ExampleCommandLines>.
+<FluidR3_GM.sf2 Professional|https://musical-artifacts.com/artifacts/738>
+is a high quality sound font with a complete set of General MIDI instruments.
+
+A typical FluidSynth invocation on Linux might be:
+
+    $ fluidsynth -a pulseaudio -m alsa_seq -g 1.0 your_soundfont.sf2
+
+=head1 General MIDI on MacOS
+
+An Audio Unit named DLSMusicDevice is available for use within GarageBand,
+Logic, and other Digital Audio Workstation (DAW) software on Mac OS X.
+
+If you wish to use banks other than the default QuickTime set, place
+them in ~/Library/Audio/Sounds/Banks/. You may now create a new track
+within GarageBand or Logic with the DLSMusicDevice instrument, and
+select your Sound Bank within the settings for this instrument.
+
+The next step is to open a virtual port, which should autoconnect within
+your DAW and be ready to send performance info to DLSMusicDevice:
+
+    # Open virtual port with a name of your choosing
+    $device->open_virtual_port('My Snazzy Port');
+    # Send middle C
+    $device->note_on( 0x00, 0xc3, 0x7f );
+    sleep( 1 );
+    $device->note_off( 0x00, 0xc3 );
+
+The 'MUS 214: MIDI Composition' channel on YouTube has a
+L<Video on setting up DLSMusicDevice in Logic|https://youtu.be/YIb-H10yzyI>.
+
+A potential alternative option is FluidSynth. This has more limited support
+for DLS patches but should load SF2/3 banks just fine. See
+L</General MIDI on Linux> for links to get started using FluidSynth.
+
+A typical FluidSynth invocation on MacOS might be:
+
+    % fluidsynth -a coreaudio -m coremidi your_soundfont.sf2
 
 =head1 KNOWN ISSUES
 
