@@ -186,4 +186,6 @@ $tests = [
 ];
 do_tests( $tests );
 
+undef $dev;
+
 done_testing;
