@@ -98,7 +98,7 @@ ScorePlayer
 
   my $score = setup_score();
 
-  my %common = ( seen => {}, etc => '...', );
+  my %common = ( seen => {}, score => $score, etc => '...', );
 
   sub treble {
       my ( %args ) = @_;
