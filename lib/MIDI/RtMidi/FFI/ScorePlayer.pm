@@ -10,8 +10,10 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
 
-        $opts{repeats} ||= 1;
-        $opts{sleep}   ||= 1;
+        $opts{repeats}  ||= 1;
+        $opts{sleep}    ||= 1;
+        $opts{loop}     ||= 1;
+        $opts{infinite} //= 1;
 
         $opts{device} = RtMidiOut->new;
 
@@ -55,7 +57,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
 
     sub play {
         my ( $self ) = @_;
-        while( 1 ) {
+        for ( 1 .. $self->{loop} ) {
             $self->_sync_phrases;
             my $micros = get_microseconds($self->{score});
             my $events = score2events($self->{score});
@@ -71,6 +73,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
             }
             sleep( $self->{sleep} );
             $self->_reset_score;
+            redo if $self->{infinite}; # Are we an infinite loop?
         }
     }
 
