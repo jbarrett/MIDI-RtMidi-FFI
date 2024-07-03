@@ -121,21 +121,14 @@ MIDI::RtMidi::FFI::ScorePlayer
 
 =head1 DESCRIPTION
 
-TBD
+This module plays a MIDI score in real-time.
 
 =head1 SEE ALSO
 
-TBD
+L<MIDI::RtMidi::FFI::Device>
 
-=head1 AUTHOR
+L<MIDI::Util>
 
-JBARRETT
-
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2024 by John Barrett.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
+L<Time::HiRes>
 
 =cut
