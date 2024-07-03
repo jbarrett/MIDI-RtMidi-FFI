@@ -2,8 +2,8 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     use strict;
     use warnings;
 
-    use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
-    use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Util);
+    # use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
+    # use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Util);
 
     use MIDI::RtMidi::FFI::Device;
     use MIDI::Util qw/ get_microseconds score2events /;
