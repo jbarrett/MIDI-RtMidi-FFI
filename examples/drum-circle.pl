@@ -119,7 +119,7 @@ sub phrase {
     return $phrase;
 }
 
-my @phrases = map { sub { phrase( %common, phrase => $_ ) } } 1 .. $opts{drummers};
+my @phrases = map { \&phrase } 1 .. $opts{drummers};
 
 MIDI::RtMidi::FFI::ScorePlayer->new(
     score   => $d->score,
