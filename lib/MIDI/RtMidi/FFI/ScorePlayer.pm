@@ -101,6 +101,12 @@ ScorePlayer
   # Generate *all* phrases based on a given phrase number.
   sub phrase_generator {
       my ( %args ) = @_;
+      if ( $args{phrase} == 1 ) {
+          ...; # Add notes or rests to the score.
+      }
+      elsif ( $args{phrase} == 1 ) {
+          ...; # Add notes or rests to the score.
+      }
       ...;
   }
 
