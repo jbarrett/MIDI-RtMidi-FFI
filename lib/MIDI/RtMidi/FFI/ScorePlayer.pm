@@ -100,7 +100,7 @@ ScorePlayer
 
   sub phrase_generator {
       # Add notes and rests to the score given a set of
-      # common arguments and a phrase number, and
+      # common arguments and a phrase number, then
       # generate ALL phrases.
   }
 
