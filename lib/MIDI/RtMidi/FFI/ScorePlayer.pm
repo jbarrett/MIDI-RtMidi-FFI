@@ -11,7 +11,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
 
     sub new {
         my ( $class, %opts ) = @_;
-        $opts{repeats} ||= 1->new;
+        $opts{repeats} ||= 1;
         $opts{device} = RtMidiOut->new;
 
         # Linux: Timidity support requires timidity in daemon mode
