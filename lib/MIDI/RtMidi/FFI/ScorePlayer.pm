@@ -32,7 +32,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         bless \%opts, $class;
     }
 
-    sub device { shift->{ device } }
+    sub device { shift->{ device } } # XXX Is this even needed?
 
     # This manipulates internals of MIDI::Score objects and
     # hashes used by drum-circle - doing this isn't a good
@@ -53,7 +53,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub play {
         my ( $self ) = @_;
         while( 1 ) {
-            $self->{score}->synch( $self->{phrases} ); # Play the phrases simultaneously
+            $self->_sync_phrases;
             my $micros = get_microseconds($self->{score});
             my $events = score2events($self->{score});
             for my $event (@{ $events }) {
@@ -69,6 +69,16 @@ package MIDI::RtMidi::FFI::ScorePlayer {
             sleep(2);
             $self->_reset_score;
         }
+    }
+
+    # Build the code-ref MIDI of all phrases to be played
+    sub _sync_phrases {
+        my ( $self ) = @_;
+        my @phrases;
+        my $n = 1;
+        push @phrases, $_->( %{ $self->{common} }, phrase => $n++ ) 
+            for @{ $self->{phrases} };
+        $self->{score}->synch( @phrases ); # Play the phrases simultaneously
     }
 
 };
