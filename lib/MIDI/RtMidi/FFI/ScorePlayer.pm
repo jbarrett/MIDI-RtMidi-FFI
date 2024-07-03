@@ -44,7 +44,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my ( $self ) = @_;
         # sorry
         $self->{score}->{ Score } = [
-            grep { $_->[0] !~ /^note/ }
+            grep { $_->[0] !~ /^note/ && $_->[0] !~ /^patch/ }
             @{ $self->{score}->{ Score } }
         ];
         ${ $self->{score}->{ Time } } = 0;
@@ -56,6 +56,8 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my ( $self ) = @_;
         while( 1 ) {
             $self->_sync_phrases;
+use Data::Dumper::Compact qw(ddc);
+warn __PACKAGE__,' L',__LINE__,' ',ddc($self->{score}, {max_width=>128});
             my $micros = get_microseconds($self->{score});
             my $events = score2events($self->{score});
             for my $event (@{ $events }) {
