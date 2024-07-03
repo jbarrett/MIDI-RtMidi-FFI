@@ -5,6 +5,9 @@ use warnings;
 # Adapted from 'drum-circle' by Gene Boggs
 # https://github.com/ology/Music
 
+use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Drummer-Tiny MIDI-Util Music-Duration-Partition);
+use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
+
 use Data::Dumper::Compact qw(ddc);
 use Getopt::Long qw(GetOptions);
 use MIDI::Drummer::Tiny ();
@@ -44,12 +47,12 @@ my $d = MIDI::Drummer::Tiny->new(
 
 # Collect the percussion instruments you wish to hear
 my @drums = (
-    $d->mute_hi_conga, $d->cabasa, $d->maracas, $d->hi_bongo, $d->mute_triangle, # 5 QUIET ONES
+    # $d->mute_hi_conga, $d->cabasa, $d->maracas, $d->hi_bongo, $d->mute_triangle, # 5 QUIET ONES
     $d->low_bongo, $d->open_hi_conga, $d->low_conga, $d->short_guiro, $d->claves, $d->hi_wood_block, $d->low_wood_block, # 7
     $d->high_agogo, $d->low_agogo, $d->tambourine, $d->cowbell, $d->open_triangle, # 5
     # $d->vibraslap, $d->high_timbale, $d->low_timbale, $d->mute_cuica, $d->open_cuica, # 5
     # $d->hi_tom, $d->hi_mid_tom, $d->low_mid_tom, $d->low_tom, $d->hi_floor_tom, $d->low_floor_tom, # 6 drum kit toms
-    # $d->kick, $d->snare, $d->open_hh, $d->pedal_hh, # 2 Western backbeat
+    # $d->kick, $d->snare, $d->open_hh, $d->pedal_hh, # 4 Western backbeat
 );
 
 print 'There are ', scalar(@drums), " known percussion instruments.\n";
