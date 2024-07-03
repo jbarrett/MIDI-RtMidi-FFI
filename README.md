@@ -2,7 +2,7 @@
 
 Perl bindings for [Gary P. Scavone's RtMidi library](https://www.music.mcgill.ca/~gary/rtmidi/), realtime MIDI input/output across Linux, Macintosh OS X, and Windows.
 
-`MIDI::RtMidi::FFI::Device` is included - this adds an OO interface, plus support for RPN/NRPN, 14-bit CC control change, convenience methods for port management, and decoding / encoding MIDI messages in a friendly, human-readable format.
+`MIDI::RtMidi::FFI::Device` is included - this adds an OO interface, plus support for RPN/NRPN, 14-bit CC control change, convenience methods for port management, and decoding / encoding of MIDI messages in a friendly, human-readable format.
 
 ## Installing
 
