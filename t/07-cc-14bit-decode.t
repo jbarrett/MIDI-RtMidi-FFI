@@ -12,7 +12,7 @@ sub do_tests {
     my $tests = shift;
     my $mode = $dev->get_14bit_mode // 'disabled';
     my $num = 0;
-    for my ( $test ) ( pairs @{ $tests } ) {
+    for my $test( pairs @{ $tests } ) {
         my @msg  = @{ $test->key };
         my $res  = $test->value;
         my $decoded = $dev->decode_message( scalar $dev->encode_message( @msg ) );
@@ -185,5 +185,7 @@ $tests = [
     [ control_change => 0x02, 0x26, 0x2E ], [ control_change => 0x02, 0x26, 0x2E ],
 ];
 do_tests( $tests );
+
+undef $dev;
 
 done_testing;

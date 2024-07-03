@@ -62,9 +62,9 @@ my $rtmidi_api_names = {
     jack        => [ "Jack",               RTMIDI_API_UNIX_JACK ],
     winmm       => [ "Windows MultiMedia", RTMIDI_API_WINDOWS_MM ],
     dummy       => [ "Dummy",              RTMIDI_API_RTMIDI_DUMMY ],
-    #web         => [ "Web MIDI API",       RTMIDI_API_WEB_MIDI_API ],
-    #winuwp      => [ "Windows UWP",        RTMIDI_API_WINDOWS_UWP ],
-    #amidi       => [ "Android MIDI API",   RTMIDI_API_ANDROID ],
+    web         => [ "Web MIDI API",       RTMIDI_API_WEB_MIDI_API ],
+    winuwp      => [ "Windows UWP",        RTMIDI_API_WINDOWS_UWP ],
+    amidi       => [ "Android MIDI API",   RTMIDI_API_ANDROID ],
 };
 
 my $byte_lookup = {
@@ -924,7 +924,7 @@ sub send_message_encoded {
     $device->send_message_encoded_cb( @event );
 
 Type 'out' only. A variant of send_message_encoded for use within user-defined
-callbacks, as callbacks are invoked by send_message_encoded.
+callbacks handling 14 bit CC, as callbacks are invoked by send_message_encoded.
 
 =cut
 
@@ -988,38 +988,6 @@ sub PANIC {
         $self->note_off( $ch, $_ ) for 0..127;
     }
 }
-
-
-=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
-
-Wrapper methods for L</send_message_encoded>, e.g.
-
-    $device->note_on( 0x00, 0x40, 0x5a );
-
-is equivalent to:
-
-    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
-
-=cut
-
-*note_off = sub { shift->send_event( note_off => @_ ) };
-*note_on = sub { shift->send_event( note_on => @_ ) };
-*control_change = sub { shift->send_event( control_change => @_ ) };
-*patch_change = sub { shift->send_event( patch_change => @_ ) };
-*key_after_touch = sub { shift->send_event( key_after_touch => @_ ) };
-*channel_after_touch = sub { shift->send_event( channel_after_touch => @_ ) };
-*pitch_wheel_change = sub { shift->send_event( pitch_wheel_change => @_ ) };
-*sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
-*sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
-*sysex = sub { shift->send_event( sysex => @_ ) };
-
-=head2 cc
-
-An alias for control_change.
-
-=cut
-
-*cc = \&control_change;
 
 =head2 get_14bit_mode
 
@@ -1272,7 +1240,7 @@ Close any open NRPN on the given channel.
 
 *close_nrpn = \&close_rpn;
 
-=head1 get_rpn
+=head2 get_rpn
 
     $device->get_nrpn( $channel );
 
@@ -1285,7 +1253,7 @@ sub get_rpn {
     $self->{ open_rpn }->{ $channel };
 }
 
-=head1 get_nrpn
+=head2 get_nrpn
 
     $device->get_rpn( $channel );
 
@@ -1454,6 +1422,37 @@ sub disable_nrpn_14bit_mode {
 }
 *disable_nrpn_14bit_callback = \&disable_nrpn_14bit_mode;
 
+=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
+
+Wrapper methods for L</send_message_encoded>, e.g.
+
+    $device->note_on( 0x00, 0x40, 0x5a );
+
+is equivalent to:
+
+    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
+
+=cut
+
+*note_off = sub { shift->send_event( note_off => @_ ) };
+*note_on = sub { shift->send_event( note_on => @_ ) };
+*control_change = sub { shift->send_event( control_change => @_ ) };
+*patch_change = sub { shift->send_event( patch_change => @_ ) };
+*key_after_touch = sub { shift->send_event( key_after_touch => @_ ) };
+*channel_after_touch = sub { shift->send_event( channel_after_touch => @_ ) };
+*pitch_wheel_change = sub { shift->send_event( pitch_wheel_change => @_ ) };
+*sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
+*sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
+*sysex = sub { shift->send_event( sysex => @_ ) };
+
+=head2 cc
+
+An alias for control_change.
+
+=cut
+
+*cc = \&control_change;
+
 my $free_dispatch = {
     in  => \&rtmidi_in_free,
     out => \&rtmidi_out_free
@@ -1563,7 +1562,7 @@ again."> - again, this is fine - it fits in with expectations so far.
 
 I<"When an MSB is received, the receiver should set its concept of the LSB
 to zero">. This, to me, is ambiguous. Should our CC now be set to
-MSB << 7 + 0? Or is it an instruction to forget any existing LSB value and
+C<( $msb << 7 ) + 0>? Or is it an instruction to forget any existing LSB value and
 await the transmission of a fresh one before constructing a CC value?
 
 With the former approach you could imagine a descending control passing a
@@ -1581,14 +1580,14 @@ MSB threshold (a large jump in LSB).
 
 Some implementations send LSB first, MSB second. If a LSB/MSB pair is sent
 each time, this is easily handled. If a pair is sent, then fine control
-is sent via LSB we have a problem. When we cross a MSB threshold,
+is sent subsequently via LSB we have a problem. When we cross a MSB threshold,
 we need to wait for the new MSB value before we can construct the complete
 CC value. This means we need to somehow know when to stop performing fine
 control with new LSB values, and await a new MSB value - we are back to
 heuristic detection, looking for LSB jumps.
 
 All to say, there are some ambiguities in how this is handled, and there
-are endless variations between devices.
+are endless variations between different devices and implementations.
 
 The second problem is needing to write explicit 14 bit message handling in
 each project individually. This module intends to obviate some of this by
@@ -1704,7 +1703,7 @@ reset to zero and a new value is returned.
 
 =head3 await (recommended)
 
-This is the same as 'midi' mode, but it aleays awaits a LSB message before
+This is the same as 'midi' mode, but it always awaits a LSB message before
 returning a value.
 
 This is likely the most compatible and reliable mode for decoding.
@@ -1847,14 +1846,29 @@ Channel must be specified in any message related to performance, such as
 
 =head2 Messages and Events
 
-A MIDI message is (usually) a short series of bytes sent on a port, instructing
+A MIDI message is a (usually) short series of bytes sent on a port, instructing
 an instrument on how to behave - which notes to play, when, how loudly, with which
 timbral variations & expression, and so on. They may also contain configuration
 info or some other sort of instruction.
 
 In this module "events" usually refer to incoming message bytes decoded into a
-descriptive sequence of values, or a mechanism for turning these values into
-message bytes for ouput.
+descriptive sequence of values, or a mechanism for turning these descriptive
+sequences into message bytes for ouput.
+
+=head2 General MIDI and Soundfonts
+
+General MIDI is a specification which standardises a single set of musical
+instruments, accessed via the "patch change" command. Any of 128 instruments
+may be assigned to any of 16 channels, with the exception of channel 10
+(0x09) which is reserved for percussion.
+
+Soundfonts are banks of sampled instruments which may be loaded by a General
+MIDI compatible softsynth. These can be quite large and complex, though they
+usually tend to be small and cheesy. If you remember 90s video game
+music or web pages playing .mid files, you're on the right track.
+
+Some implementations also support DLS files, which are similar to soundfonts,
+though unlike soundfonts the specification is freely available.
 
 =head1 Virtual Devices and Windows
 
@@ -1928,7 +1942,7 @@ distro. To run FluidSynth you'll need a SF2 or SF3 soundfont file. See
 L<Getting started with fluidsynth|https://github.com/FluidSynth/fluidsynth/wiki/GettingStarted>
 and
 L<Example Command Lines to start fluidsynth|https://github.com/FluidSynth/fluidsynth/wiki/ExampleCommandLines>.
-<FluidR3_GM.sf2 Professional|https://musical-artifacts.com/artifacts/738>
+L<FluidR3_GM.sf2 Professional|https://musical-artifacts.com/artifacts/738>
 is a high quality sound font with a complete set of General MIDI instruments.
 
 A typical FluidSynth invocation on Linux might be:
@@ -1938,10 +1952,10 @@ A typical FluidSynth invocation on Linux might be:
 =head1 General MIDI on MacOS
 
 An Audio Unit named DLSMusicDevice is available for use within GarageBand,
-Logic, and other Digital Audio Workstation (DAW) software on Mac OS X.
+Logic, and other Digital Audio Workstation (DAW) software on MacOS.
 
 If you wish to use banks other than the default QuickTime set, place
-them in ~/Library/Audio/Sounds/Banks/. You may now create a new track
+them in C<~/Library/Audio/Sounds/Banks/>. You may now create a new track
 within GarageBand or Logic with the DLSMusicDevice instrument, and
 select your Sound Bank within the settings for this instrument.
 
@@ -1958,11 +1972,10 @@ your DAW and be ready to send performance info to DLSMusicDevice:
 The 'MUS 214: MIDI Composition' channel on YouTube has a
 L<Video on setting up DLSMusicDevice in Logic|https://youtu.be/YIb-H10yzyI>.
 
-A potential alternative option is FluidSynth. This has more limited support
-for DLS patches but should load SF2/3 banks just fine. See
-L</General MIDI on Linux> for links to get started using FluidSynth.
-
-A typical FluidSynth invocation on MacOS might be:
+A potential alternative option is FluidSynth. This has more limited support for
+DLS banks but should load SF2/3 banks just fine. See L</General MIDI on Linux>
+for links to get started using FluidSynth. A typical FluidSynth invocation on
+MacOS might be:
 
     % fluidsynth -a coreaudio -m coremidi your_soundfont.sf2
 

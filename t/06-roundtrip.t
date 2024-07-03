@@ -33,4 +33,6 @@ for my $msg ( @{ $msgs } ) {
     is round_trip( $msg ), $msg, "Round-trip decode OK for $msg->[0]";
 }
 
+undef $dev;
+
 done_testing;
