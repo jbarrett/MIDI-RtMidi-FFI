@@ -11,6 +11,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
 
     sub new {
         my ( $class, %opts ) = @_;
+
         $opts{repeats} ||= 1;
 
         $opts{device} = RtMidiOut->new;
