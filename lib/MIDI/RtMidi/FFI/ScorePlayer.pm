@@ -104,7 +104,7 @@ ScorePlayer
       if ( $args{phrase} == 1 ) {
           ...; # Add notes or rests to the score.
       }
-      elsif ( $args{phrase} == 1 ) {
+      elsif ( $args{phrase} == 2 ) {
           ...; # Add notes or rests to the score.
       }
       ...;
