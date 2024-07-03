@@ -51,8 +51,8 @@ package MIDI::RtMidi::FFI::ScorePlayer {
             @{ $self->{score}->{ Score } }
         ];
         ${ $self->{score}->{ Time } } = 0;
-        $self->{common}{seen} = {}
-            if exists $self->{common}{seen};
+        $self->{common}->{seen} = {}
+            if exists $self->{common}->{seen};
     }
 
     sub play {
