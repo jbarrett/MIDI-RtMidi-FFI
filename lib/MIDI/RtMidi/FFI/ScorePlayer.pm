@@ -54,9 +54,8 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my ( $self ) = @_;
         while( 1 ) {
             $self->{score}->synch( $self->{phrases} ); # Play the phrases simultaneously
-            my $score = $self->{score};
-            my $micros = get_microseconds($score);
-            my $events = score2events($score);
+            my $micros = get_microseconds($self->{score});
+            my $events = score2events($self->{score});
             for my $event (@{ $events }) {
                 next if $event->[0] =~ /set_tempo|time_signature/;
                 if ( $event->[0] eq 'text_event' ) {
