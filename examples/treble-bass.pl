@@ -12,7 +12,7 @@ my %common = ( score => $score );
 
 MIDI::RtMidi::FFI::ScorePlayer->new(
   score    => $score,
-  phrases  => [ \&treble, \&bass ],
+  parts    => [ \&treble, \&bass ],
   common   => \%common,
   repeats  => 1,
   sleep    => 0,

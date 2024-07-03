@@ -70,7 +70,7 @@ my %seen; # Drums that have been selected
 # Get the amount of time to rest = beats * 96
 my $rest = 'd' . ($opts{beats} * ticks($d->score));
 
-# Common phrase() arguments
+# Common part() arguments
 my %common = (
     options   => \%opts,
     drummer   => $d,
@@ -81,7 +81,7 @@ my %common = (
     width     => length($opts{drummers}),
 );
 
-sub phrase {
+sub part {
     my (%args) = @_;
 
     # Get an unseen drum to play
@@ -97,7 +97,7 @@ sub phrase {
     printf "%*d. %-19s: %s", $args{width}, $args{phrase}, $drum_name, ddc($motif);
 
     # Either rest or play the motif
-    my $phrase = sub {
+    my $part = sub {
         for my $n (1 .. $args{drummer}->bars + $args{options}->{extend}) {
             # If we are not up yet, then rest
             if ($n < ($args{phrase} * $args{options}->{measures})) {
@@ -113,16 +113,16 @@ sub phrase {
         }
     };
 
-    return $phrase;
+    return $part;
 }
 
-my @phrases = (\&phrase) x $opts{drummers};
+my @parts = (\&part) x $opts{drummers};
 
 MIDI::RtMidi::FFI::ScorePlayer->new(
-    score   => $d->score,
-    phrases => \@phrases,
-    common  => \%common,
-		sleep		=> 2,
+    score  => $d->score,
+    parts  => \@parts,
+    common => \%common,
+    sleep  => 2,
 )->play;
 
 __END__
@@ -165,11 +165,11 @@ C<90>) and the number of B<measures> each drummer plays.
 5. Instantiate a rhythmic phrase generator with the given number of
 B<beats> and a B<pool> of possible durations.
 
-6. Build the phrases to play, one for each drummer.
+6. Build the parts to play, one for each drummer.
 
 =head2 Sync
 
-Synchronize the phrase parts, so that they are played simultaneously.
+Synchronize the parts, so that they are played simultaneously.
 
 =head2 Play
 
@@ -179,8 +179,8 @@ L<MIDI::RtMidi::FFI>.
 =head2 Phrase
 
 This is the meat of the program, utilizing all the things we have
-setup. The subroutine generates a phrase (a C<CODE> reference), which
-is added to the list of phrases that are then played together.
+setup. The subroutine generates a part (a C<CODE> reference), which
+is added to the list of parts that are then played together.
 
 1. Get an unseen instrument to use for a player.
 

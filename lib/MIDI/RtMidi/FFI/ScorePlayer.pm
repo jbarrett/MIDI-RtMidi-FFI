@@ -58,7 +58,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub play {
         my ( $self ) = @_;
         for ( 1 .. $self->{loop} ) {
-            $self->_sync_phrases;
+            $self->_sync_parts;
             my $micros = get_microseconds( $self->{score} );
             my $events = score2events( $self->{score} );
             for my $event ( @$events ) {
@@ -77,14 +77,14 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         }
     }
 
-    # Build the code-ref MIDI of all phrases to be played
-    sub _sync_phrases {
+    # Build the code-ref MIDI of all parts to be played
+    sub _sync_parts {
         my ( $self ) = @_;
-        my @phrases;
+        my @parts;
         my $n = 1;
-        push @phrases, $_->( %{ $self->{common} }, phrase => $n++ ) 
-            for @{ $self->{phrases} };
-        $self->{score}->synch( @phrases ) # Play the phrases simultaneously
+        push @parts, $_->( %{ $self->{common} }, phrase => $n++ ) 
+            for @{ $self->{parts} };
+        $self->{score}->synch( @parts ) # Play the parts simultaneously
             for 1 .. $self->{repeats};
     }
 
@@ -120,9 +120,9 @@ MIDI::RtMidi::FFI::ScorePlayer
 
   MIDI::RtMidi::FFI::ScorePlayer->new(
       score    => $score,
-      phrases  => [ \&treble, \&bass ], # phrase functions
-      common   => \%common, # arguments given to the phrase functions
-      repeats  => 4, # number of repeated synched phrases (default: 1)
+      parts    => [ \&treble, \&bass ], # part functions
+      common   => \%common, # arguments given to the part functions
+      repeats  => 4, # number of repeated synched parts (default: 1)
       sleep    => 2, # number of seconds to sleep between loops (default: 1)
       loop     => 4, # loop limit if finite (default: 1)
       infinite => 0, # loop infinitely or with the limit (default: 1)
