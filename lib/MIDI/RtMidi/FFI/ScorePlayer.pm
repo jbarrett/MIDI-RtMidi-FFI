@@ -98,7 +98,7 @@ MIDI::RtMidi::FFI::ScorePlayer
 
   my $score = setup_score();
 
-  my %common = ( seen => {}, score => $score, etc => '...', );
+  my %common = ( score => $score, seen => {}, etc => '...', );
 
   sub treble {
       my ( %args ) = @_;
