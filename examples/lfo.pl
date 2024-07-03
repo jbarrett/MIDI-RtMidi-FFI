@@ -32,7 +32,7 @@ my $sleep = 1_000_000 / SAMPLE_RATE;
 my $now = time;
 
 while (1) {
-    my $sample = ( sin( pi * FREQUENCY * ( time - $now ) ) + 1 ) * $max;
+    my $sample = ( sin( pi2 * FREQUENCY * ( time - $now ) ) + 1 ) * $max;
     $out->cc( 0x00, 0x00, $sample );
     usleep( $sleep );
 }
