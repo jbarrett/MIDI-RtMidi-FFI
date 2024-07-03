@@ -2,6 +2,8 @@
 
 Perl bindings for [Gary P. Scavone's RtMidi library](https://www.music.mcgill.ca/~gary/rtmidi/), realtime MIDI input/output across Linux, Macintosh OS X, and Windows.
 
+`MIDI::RtMidi::FFI::Device` is included - this adds an OO interface, plus support for RPN/NRPN, 14-bit CC control change, convenience methods for port management, and decoding / encoding MIDI messages in a friendly, human-readable format.
+
 ## Installing
 
 With [cpanminus](https://metacpan.org/pod/App::cpanminus):
@@ -48,6 +50,7 @@ while ( 1 ) {
 ```
 
 Complete documentation for the current version may be found on the [MIDI::RtMidi::FFI::Device MetaCPAN page](https://metacpan.org/pod/MIDI::RtMidi::FFI::Device).
+There are also a number of [examples](tree/main/examples/).
 
 ## Help! I don't hear anything!
 
