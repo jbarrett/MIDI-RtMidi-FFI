@@ -1852,8 +1852,23 @@ timbral variations & expression, and so on. They may also contain configuration
 info or some other sort of instruction.
 
 In this module "events" usually refer to incoming message bytes decoded into a
-descriptive sequence of values, or a mechanism for turning these values into
-message bytes for ouput.
+descriptive sequence of values, or a mechanism for turning these descriptive
+sequences into message bytes for ouput.
+
+=head2 General MIDI and Soundfonts
+
+General MIDI is a specification which standardises a single set of musical
+instruments, accessed via the "patch change" command. Any of 128 instruments
+may be assigned to any of 16 channels, with the exception of channel 10
+(0x09) which is reserved for percussion.
+
+Soundfonts are banks of sampled instruments which may be loaded by a General
+MIDI compatible softsynth. These can be quite large and complex, though they
+usually tend to be small and cheesy. If you remember 90s video game
+music or web pages playing .mid files, you're on the right track.
+
+Some implementations also support DLS files, which are similar to soundfonts,
+though unlike soundfonts the specification is freely available.
 
 =head1 Virtual Devices and Windows
 

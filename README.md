@@ -19,7 +19,7 @@ $device->open_virtual_port( 'foo' );
 # MIDI device on your system, such as a loopback device, or virtual or
 # hardware synth. Your device must be connected to some sort of synth to
 # make noise.
-$device->open_port_by_name( qr/wavetable|loopmidi|timidity/i );
+$device->open_port_by_name( qr/wavetable|loopmidi|timidity|fluid/i );
 
 # Now that a port is open we can start to send MIDI messages, such as
 # this annoying sequence
@@ -40,6 +40,18 @@ while ( 1 ) {
 ```
 
 Complete documentation for the current version may be found on the [MIDI::RtMidi::FFI::Device MetaCPAN page](https://metacpan.org/pod/MIDI::RtMidi::FFI::Device).
+
+## Help! I don't hear anything!
+
+RtMidi requires a hardware or software synth to play music. If your system lacks one of these, try [FluidSynth](https://www.fluidsynth.org/) or [TiMidity++](https://timidity.sourceforge.net/).
+Specific instructions for your system should be easily found.
+
+- [Getting started with fluidsynth](https://github.com/FluidSynth/fluidsynth/wiki/GettingStarted)
+- [Example Command Lines to start fluidsynth](https://github.com/FluidSynth/fluidsynth/wiki/ExampleCommandLines)
+- [FluidR3\_GM.sf2 Professional](https://musical-artifacts.com/artifacts/738) - a large, high quality soundfont
+- [RLNDGM.SF2](https://musical-artifacts.com/artifacts/724) - a small but complete soundfont
+
+[VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth) can be used on Windows if you wish to use soundfonts beyond the default GS Wavetable.
 
 ## Installing
 
