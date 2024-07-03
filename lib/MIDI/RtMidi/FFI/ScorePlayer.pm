@@ -9,6 +9,8 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
 
+        $self->{repeats} ||= 1;
+
         $opts{device} = RtMidiOut->new;
 
         # Linux: Timidity support requires timidity in daemon mode
@@ -77,7 +79,8 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my $n = 1;
         push @phrases, $_->( %{ $self->{common} }, phrase => $n++ ) 
             for @{ $self->{phrases} };
-        $self->{score}->synch( @phrases ); # Play the phrases simultaneously
+        $self->{score}->synch( @phrases ) # Play the phrases simultaneously
+            for 1 .. $self->{repeats};
     }
 
 };

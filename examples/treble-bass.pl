@@ -16,6 +16,7 @@ MIDI::RtMidi::FFI::ScorePlayer->new(
   score   => $score,
   phrases => [ \&treble, \&bass ],
   common  => \%common,
+  repeats => 4,
 )->play;
 
 sub bass {
