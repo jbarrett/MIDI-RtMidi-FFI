@@ -82,9 +82,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my $n = 1;
         push @phrases, $_->( %{ $self->{common} }, phrase => $n++ ) 
             for @{ $self->{phrases} };
-        # Play the phrases simultaneously
-        $self->{score}->synch( @phrases )
-            for 1 .. $self->{repeats};
+        $self->{score}->synch( @phrases ); # Play the phrases simultaneously
     }
 
 };
