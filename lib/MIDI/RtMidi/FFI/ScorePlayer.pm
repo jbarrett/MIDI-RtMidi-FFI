@@ -137,6 +137,10 @@ This module plays a MIDI score in real-time.
 
 =head1 METHODS
 
+=head2 new
+
+Instantiate a new C<MIDI::RtMidi::FFI::ScorePlayer> object.
+
 =head2 play
 
 Play the MIDI score in real-time.
