@@ -37,7 +37,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         bless \%opts, $class;
     }
 
-    sub device { shift->{ device } } # XXX Is this even needed?
+    sub device { shift->{ device } }
 
     # This manipulates internals of MIDI::Score objects and
     # hashes used by drum-circle - doing this isn't a good
