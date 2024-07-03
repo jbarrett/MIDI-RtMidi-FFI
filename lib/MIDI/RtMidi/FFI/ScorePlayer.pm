@@ -118,7 +118,7 @@ MIDI::RtMidi::FFI::ScorePlayer
       ...; # As above
   }
 
-  ScorePlayer->new(
+  MIDI::RtMidi::FFI::ScorePlayer->new(
       score    => $score,
       phrases  => [ \&treble, \&bass ],
       common   => \%common, # arguments to give to the phrase functions
