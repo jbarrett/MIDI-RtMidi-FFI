@@ -1,5 +1,8 @@
 package MIDI::RtMidi::FFI::ScorePlayer {
 
+use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Util);
+use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
+
     use strict;
     use warnings;
 
@@ -131,6 +134,12 @@ MIDI::RtMidi::FFI::ScorePlayer
 =head1 DESCRIPTION
 
 This module plays a MIDI score in real-time.
+
+=head1 METHODS
+
+=head2 play
+
+Play the MIDI score in real-time.
 
 =head1 SEE ALSO
 
