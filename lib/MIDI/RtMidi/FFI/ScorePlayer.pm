@@ -140,4 +140,8 @@ L<MIDI::Util>
 
 L<Time::HiRes>
 
+=head1 CONTRIBUTORS
+
+Gene Boggs <gene.boggs@gmail.com>
+
 =cut
