@@ -108,7 +108,7 @@ ScorePlayer
 
   ScorePlayer->new(
       score   => $score,
-      phrases => [ sub { treble(%common), sub { bass(%common) } ],
+      phrases => [ sub { treble(%common) }, sub { bass(%common) } ],
       common  => \%common,
   )->play;
 
