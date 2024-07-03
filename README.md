@@ -2,6 +2,14 @@
 
 Perl bindings for [Gary P. Scavone's RtMidi library](https://www.music.mcgill.ca/~gary/rtmidi/), realtime MIDI input/output across Linux, Macintosh OS X, and Windows.
 
+## Installing
+
+With [cpanminus](https://metacpan.org/pod/App::cpanminus):
+
+```
+$ cpanm MIDI::RtMidi::FFI
+```
+
 ## Using
 
 ```perl
@@ -52,14 +60,6 @@ Specific instructions for your system should be easily found.
 - [RLNDGM.SF2](https://musical-artifacts.com/artifacts/724) - a small but complete soundfont
 
 [VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth) can be used on Windows if you wish to use soundfonts beyond the default GS Wavetable.
-
-## Installing
-
-With [cpanminus](https://metacpan.org/pod/App::cpanminus):
-
-```
-$ cpanm MIDI::RtMidi::FFI
-```
 
 ## Bugs, Feedback
 
