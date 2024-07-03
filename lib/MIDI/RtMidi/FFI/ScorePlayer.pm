@@ -98,15 +98,16 @@ ScorePlayer
 
   my %common = ( seen => {}, etc => '...', }
 
-  sub phrase {
+  sub phrase_generator {
       # Add notes and rests to the score given a set of
-      # common arguments and a phrase number.
+      # common arguments and a phrase number, that
+      # generates ALL phrases.
   }
 
   ScorePlayer->new(
       score     => $score,
       phrases   => $n,
-      phrase_cb => \&phrase,
+      phrase_cb => \&phrase_generator,
       common    => \%common,
   )->play;
 
