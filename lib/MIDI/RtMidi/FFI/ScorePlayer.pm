@@ -53,7 +53,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub play {
         my ( $self ) = @_;
         while( 1 ) {
-            my $score = $self->_score_phrases;
+            my $score = $self->_sync_phrases;
             my $micros = get_microseconds($score);
             my $events = score2events($score);
             for my $event (@{ $events }) {
@@ -72,12 +72,9 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     }
 
     # Build the code-ref MIDI of all phrases to be played
-    sub _score_phrases {
+    sub _sync_phrases {
         my ( $self ) = @_;
-        my @phrases;
-        push @phrases, sub { $_->( %{ $self->{common} } ) }
-            for @{ $self->{phrases} };
-        $self->{score}->synch( @phrases ); # Play the phrases simultaneously
+        $self->{score}->synch( $self->{phrases} ); # Play the phrases simultaneously
         return $self->{score};
     }
 
@@ -111,7 +108,7 @@ ScorePlayer
 
   ScorePlayer->new(
       score   => $score,
-      phrases => [ \&treble, \&bass ],
+      phrases => [ sub { treble(%common), sub { bass(%common) } ],
       common  => \%common,
   )->play;
 
