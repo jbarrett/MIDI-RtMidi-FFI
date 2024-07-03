@@ -106,7 +106,7 @@ ScorePlayer
 
   ScorePlayer->new(
       score     => $score,
-      phrases   => $n,
+      phrases   => 16,
       phrase_cb => \&phrase_generator,
       common    => \%common,
   )->play;
