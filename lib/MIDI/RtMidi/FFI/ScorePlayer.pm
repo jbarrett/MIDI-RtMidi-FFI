@@ -100,8 +100,8 @@ ScorePlayer
 
   sub phrase_generator {
       # Add notes and rests to the score given a set of
-      # common arguments and a phrase number, that
-      # generates ALL phrases.
+      # common arguments and a phrase number, and
+      # generate ALL phrases.
   }
 
   ScorePlayer->new(
