@@ -121,11 +121,11 @@ MIDI::RtMidi::FFI::ScorePlayer
   ScorePlayer->new(
       score    => $score,
       phrases  => [ \&treble, \&bass ],
-      common   => \%common,
-      repeats  => 4,
-      sleep    => 2,
-      loop     => 4,
-      infinite => 0,
+      common   => \%common, # arguments to give to the phrase functions
+      repeats  => 4,        # number of repeated phrases
+      sleep    => 2,        # number of seconds to sleep between loops
+      loop     => 4,        # loop limit if finite
+      infinite => 0,        # to loop infinitely or with the limit
   )->play;
 
 =head1 DESCRIPTION
