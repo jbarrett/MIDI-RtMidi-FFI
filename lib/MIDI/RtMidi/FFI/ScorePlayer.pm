@@ -11,7 +11,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my ( $class, %opts ) = @_;
 
         $opts{repeats}  ||= 1;
-        $opts{sleep}    ||= 1;
+        $opts{sleep}    //= 1;
         $opts{loop}     ||= 1;
         $opts{infinite} //= 1;
 
