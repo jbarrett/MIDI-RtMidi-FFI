@@ -53,7 +53,8 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub play {
         my ( $self ) = @_;
         while( 1 ) {
-            my $score = $self->_sync_phrases;
+            $self->{score}->synch( $self->{phrases} ); # Play the phrases simultaneously
+            my $score = $self->{score};
             my $micros = get_microseconds($score);
             my $events = score2events($score);
             for my $event (@{ $events }) {
@@ -69,13 +70,6 @@ package MIDI::RtMidi::FFI::ScorePlayer {
             sleep(2);
             $self->_reset_score;
         }
-    }
-
-    # Build the code-ref MIDI of all phrases to be played
-    sub _sync_phrases {
-        my ( $self ) = @_;
-        $self->{score}->synch( $self->{phrases} ); # Play the phrases simultaneously
-        return $self->{score};
     }
 
 };
