@@ -24,13 +24,13 @@ MIDI::RtMidi::FFI::ScorePlayer->new(
 sub bass {
   my ( %args ) = @_;
 
-    set_chan_patch( $args{score}, 0, 35 );
-
-    my @pitches = (
-      get_scale_MIDI( 'C', 2, 'pentatonic' ),
-    );
+  my @pitches = (
+    get_scale_MIDI( 'C', 2, 'pentatonic' ),
+  );
 
   my $bass = sub {
+    set_chan_patch( $args{score}, 0, 35 );
+
     for my $n ( 1 .. 4 ) {
       my $pitch = $pitches[ int rand @pitches ];
       $args{score}->n( 'hn', $pitch );
@@ -43,13 +43,13 @@ sub bass {
 sub treble {
   my ( %args ) = @_;
 
+  my @pitches = (
+    get_scale_MIDI( 'C', 4, 'major' ),
+    get_scale_MIDI( 'C', 5, 'major' ),
+  );
+
   my $treble = sub {
     set_chan_patch( $args{score}, 1, 0 );
-
-    my @pitches = (
-      get_scale_MIDI( 'C', 4, 'major' ),
-      get_scale_MIDI( 'C', 5, 'major' ),
-    );
 
     for my $n ( 1 .. 4 ) {
       my $pitch = $pitches[ int rand @pitches ];
