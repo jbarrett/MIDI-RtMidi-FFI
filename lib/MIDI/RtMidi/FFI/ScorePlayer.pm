@@ -102,16 +102,20 @@ ScorePlayer
 
   sub treble {
       my ( %args ) = @_;
-      ...; # Add notes or rests to the score.
+      my $treble = sub {
+          ...; # Add notes or rests to the score in an
+               # anonymous subroutine, and return that
+               # coderef.
+      }
+      return $treble;
   }
   sub bass {
-      my ( %args ) = @_;
-      ...; # Add notes or rests to the score.
+      ...; # As above
   }
 
   ScorePlayer->new(
       score   => $score,
-      phrases => [ sub { treble(%common) }, sub { bass(%common) } ],
+      phrases => [ \&treble, \&bass ],
       common  => \%common,
   )->play;
 
