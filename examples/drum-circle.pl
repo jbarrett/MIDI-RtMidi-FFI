@@ -208,7 +208,13 @@ The writeup: L<https://ology.github.io/2020/11/01/imitating-a-drum-circle/>
 
 The Wikipedia entry: L<https://en.wikipedia.org/wiki/Drum_circle>
 
-Real-time MIDI: L<MIDI::RtMidi::FFI>
+L<MIDI::Drummer::Tiny>
+
+L<MIDI::RtMidi::FFI::ScorePlayer>
+
+L<MIDI::Util>
+
+L<Music::Duration::Partition>
 
 =head1 AUTHOR
 
