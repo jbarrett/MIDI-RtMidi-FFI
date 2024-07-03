@@ -13,11 +13,13 @@ my %common = (
 );
 
 MIDI::RtMidi::FFI::ScorePlayer->new(
-  score   => $score,
-  phrases => [ \&treble, \&bass ],
-  common  => \%common,
-  repeats => 4,
-  sleep   => 4,
+  score    => $score,
+  phrases  => [ \&treble, \&bass ],
+  common   => \%common,
+  repeats  => 4,
+  sleep    => 2,
+  loop     => 4,
+  infinite => 0,
 )->play;
 
 sub bass {
