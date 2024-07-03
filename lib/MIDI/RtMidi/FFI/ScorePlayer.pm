@@ -119,9 +119,13 @@ MIDI::RtMidi::FFI::ScorePlayer
   }
 
   ScorePlayer->new(
-      score   => $score,
-      phrases => [ \&treble, \&bass ],
-      common  => \%common,
+      score    => $score,
+      phrases  => [ \&treble, \&bass ],
+      common   => \%common,
+      repeats  => 4,
+      sleep    => 2,
+      loop     => 4,
+      infinite => 0,
   )->play;
 
 =head1 DESCRIPTION
