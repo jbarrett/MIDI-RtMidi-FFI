@@ -5,9 +5,13 @@ use warnings;
 # Adapted from 'drum-circle' by Gene Boggs
 # https://github.com/ology/Music
 
+use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Drummer-Tiny MIDI-Util Music-Duration-Partition);
+use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
+
 use Data::Dumper::Compact qw(ddc);
 use Getopt::Long qw(GetOptions);
 use MIDI::Drummer::Tiny ();
+use MIDI::RtMidi::FFI::ScorePlayer ();
 use MIDI::Util qw(midi_dump ticks);
 use Music::Duration::Partition ();
 use Pod::Usage qw(pod2usage);
@@ -43,12 +47,12 @@ my $d = MIDI::Drummer::Tiny->new(
 
 # Collect the percussion instruments you wish to hear
 my @drums = (
-    # $d->mute_hi_conga, $d->cabasa, $d->maracas, $d->hi_bongo, $d->mute_triangle, # 5 QUIET ONES
+    $d->mute_hi_conga, $d->cabasa, $d->maracas, $d->hi_bongo, $d->mute_triangle, # 5 QUIET ONES
     $d->low_bongo, $d->open_hi_conga, $d->low_conga, $d->short_guiro, $d->claves, $d->hi_wood_block, $d->low_wood_block, # 7
     $d->high_agogo, $d->low_agogo, $d->tambourine, $d->cowbell, $d->open_triangle, # 5
     # $d->vibraslap, $d->high_timbale, $d->low_timbale, $d->mute_cuica, $d->open_cuica, # 5
     # $d->hi_tom, $d->hi_mid_tom, $d->low_mid_tom, $d->low_tom, $d->hi_floor_tom, $d->low_floor_tom, # 6 drum kit toms
-    # $d->kick, $d->snare, # 2 Western backbeat
+    # $d->kick, $d->snare, $d->open_hh, $d->pedal_hh, # 2 Western backbeat
 );
 
 print 'There are ', scalar(@drums), " known percussion instruments.\n";
@@ -80,16 +84,6 @@ my %common = (
     width     => length($opts{drummers}),
 );
 
-# Build the code-ref MIDI phrases played by each drummer
-sub score_cb {
-    my @phrases;
-    push @phrases, phrase(%common, phrase => $_)
-        for 1 .. $opts{drummers};
-
-    $d->score->synch(@phrases); # Play the phrases simultaneously
-    return $d->score;
-}
-
 sub phrase {
     my (%args) = @_;
 
@@ -103,7 +97,7 @@ sub phrase {
     my $motif = $args{generator}->motif; # Create a rhythmic phrase
 
     # Tell them what they've won!
-    printf "%*d. %-15s: %s", $args{width}, $args{phrase}, $drum_name, ddc($motif);
+    printf "%*d. %-19s: %s", $args{width}, $args{phrase}, $drum_name, ddc($motif);
 
     # Either rest or play the motif
     my $phrase = sub {
@@ -125,76 +119,13 @@ sub phrase {
     return $phrase;
 }
 
-package ScorePlayer {
+my @phrases = map { sub { phrase( %common, phrase => $_ ) } } 1 .. $opts{drummers};
 
-    use MIDI::RtMidi::FFI::Device;
-    use MIDI::Util qw/ get_microseconds score2events /;
-    use Time::HiRes qw/ usleep /;
-
-    sub new {
-        my ( $class, %opts ) = @_;
-        die "Callback required" unless $opts{ callback };
-        $opts{device} = RtMidiOut->new;
-
-        # Linux: Timidity support requires timidity in daemon mode
-        # If your distro does not install a service, do: timidity -iAD
-        # FluidSynth is an alternative to Timidity++
-        $opts{port} //= qr/wavetable|loopmidi|timidity|fluid/i;
-
-        # MacOS: You can get General MIDI via DLSMusicDevice within
-        # Logic or Garageband. You will need a soundfont containing
-        # drum patches in '~/Library/Audio/Sounds/Banks/'
-        # and DLSMusicDevice open in GarageBand / Logic with this
-        # sound front selected.
-        # DLSMusicDevice should receive input from the virtual port
-        # opened below.
-        # See MIDI::RtMidi::FFI::Device docs for more info.
-        $opts{device}->open_virtual_port('Drum Circle') if $^O eq 'darwin';
-        # Alternatively you can use FluidSynth
-        $opts{device}->open_port_by_name( $opts{port} );
-        bless \%opts, $class;
-    }
-
-    sub device { shift->{ device } }
-
-    # This manipulates internals of MIDI::Score objects and
-    # hashes used by drum-circle - doing this isn't a good
-    # idea - skip to `sub play` to see the interesting piece
-    # of this example.
-    sub reset_score {
-        my ( $self, $drummer ) = @_;
-        # sorry
-        $drummer->score->{ Score } = [
-            grep { $_->[0] !~ /^note/ }
-            @{ $drummer->score->{ Score } }
-        ];
-        ${ $drummer->score->{ Time } } = 0;
-        $self->{common}->{seen} = {};
-    }
-
-    sub play {
-        my ( $self ) = @_;
-        while( 1 ) {
-            my $score = $self->{ callback }->();
-            my $micros = get_microseconds($score);
-            my $events = score2events($score);
-            for my $event (@{ $events }) {
-                next if $event->[0] =~ /set_tempo|time_signature/;
-                if ( $event->[0] eq 'text_event' ) {
-                    printf "%s\n", $event->[-1];
-                    next;
-                }
-                my $useconds = $micros * $event->[1];
-                usleep($useconds) if ( $useconds > 0 && $useconds < 1_000_000 );
-                $self->device->send_event( $event->[0] => @{ $event }[ 2 .. $#$event ] );
-            }
-            sleep(1);
-            $self->reset_score( $d );
-        }
-    }
-};
-
-ScorePlayer->new( callback => \&score_cb, common => \%common )->play;
+MIDI::RtMidi::FFI::ScorePlayer->new(
+    score   => $d->score,
+    phrases => \@phrases,
+    common  => \%common,
+)->play;
 
 __END__
 
