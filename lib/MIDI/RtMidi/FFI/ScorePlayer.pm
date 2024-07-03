@@ -125,7 +125,7 @@ MIDI::RtMidi::FFI::ScorePlayer
       repeats  => 4,        # number of repeated phrases
       sleep    => 2,        # number of seconds to sleep between loops
       loop     => 4,        # loop limit if finite
-      infinite => 0,        # to loop infinitely or with the limit
+      infinite => 0,        # loop infinitely or with the limit
   )->play;
 
 =head1 DESCRIPTION
