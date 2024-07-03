@@ -12,8 +12,6 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
 
-        $opts{repeats} ||= 1;
-
         $opts{device} = RtMidiOut->new;
 
         # Linux: Timidity support requires timidity in daemon mode
@@ -119,7 +117,6 @@ MIDI::RtMidi::FFI::ScorePlayer
       score   => $score,
       phrases => [ \&treble, \&bass ],
       common  => \%common,
-      repeats => 4,
   )->play;
 
 =head1 DESCRIPTION
