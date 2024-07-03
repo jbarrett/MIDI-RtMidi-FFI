@@ -98,10 +98,12 @@ ScorePlayer
 
   my %common = ( seen => {}, etc => '...', );
 
+  # Add notes and rests to the score given a set of
+  # common arguments and a phrase number, then
+  # generate ALL phrases.
   sub phrase_generator {
-      # Add notes and rests to the score given a set of
-      # common arguments and a phrase number, then
-      # generate ALL phrases.
+      my ( %args ) = @_;
+      ...;
   }
 
   ScorePlayer->new(
