@@ -122,6 +122,7 @@ MIDI::RtMidi::FFI::ScorePlayer->new(
     score   => $d->score,
     phrases => \@phrases,
     common  => \%common,
+		sleep		=> 2,
 )->play;
 
 __END__
