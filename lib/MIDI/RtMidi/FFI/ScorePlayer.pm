@@ -61,7 +61,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
             $self->_sync_phrases;
             my $micros = get_microseconds( $self->{score} );
             my $events = score2events( $self->{score} );
-            for my $event (@{ $events }) {
+            for my $event ( @$events ) {
                 next if $event->[0] =~ /set_tempo|time_signature/;
                 if ( $event->[0] eq 'text_event' ) {
                     printf "%s\n", $event->[-1];
