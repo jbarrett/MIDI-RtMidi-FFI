@@ -5,9 +5,6 @@ use warnings;
 # Adapted from 'drum-circle' by Gene Boggs
 # https://github.com/ology/Music
 
-use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Drummer-Tiny MIDI-Util Music-Duration-Partition);
-use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
-
 use Data::Dumper::Compact qw(ddc);
 use Getopt::Long qw(GetOptions);
 use MIDI::Drummer::Tiny ();
