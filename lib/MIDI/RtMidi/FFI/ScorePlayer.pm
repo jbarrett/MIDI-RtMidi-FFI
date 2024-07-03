@@ -98,23 +98,19 @@ ScorePlayer
 
   my %common = ( seen => {}, etc => '...', );
 
-  # Generate *all* phrases based on a given phrase number.
-  sub phrase_generator {
+  sub treble {
       my ( %args ) = @_;
-      if ( $args{phrase} == 1 ) {
-          ...; # Add notes or rests to the score.
-      }
-      elsif ( $args{phrase} == 2 ) {
-          ...; # Add notes or rests to the score.
-      }
-      ...;
+      ...; # Add notes or rests to the score.
+  }
+  sub bass {
+      my ( %args ) = @_;
+      ...; # Add notes or rests to the score.
   }
 
   ScorePlayer->new(
-      score     => $score,
-      phrases   => 16,
-      phrase_cb => \&phrase_generator,
-      common    => \%common,
+      score   => $score,
+      phrases => [ \&treble, \&bass ],
+      common  => \%common,
   )->play;
 
 =head1 DESCRIPTION
