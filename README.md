@@ -49,8 +49,8 @@ while ( 1 ) {
 }
 ```
 
-Complete documentation for the current version may be found on the [MIDI::RtMidi::FFI::Device MetaCPAN page](https://metacpan.org/pod/MIDI::RtMidi::FFI::Device).
-There are also a number of [examples](tree/main/examples/).
+Complete documentation for the current version may be found on the [`MIDI::RtMidi::FFI::Device` MetaCPAN page](https://metacpan.org/pod/MIDI::RtMidi::FFI::Device).
+There are also a number of [examples](https://github.com/jbarrett/MIDI-RtMidi-FFI/tree/main/examples).
 
 ## Help! I don't hear anything!
 
