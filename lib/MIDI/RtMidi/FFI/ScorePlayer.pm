@@ -103,9 +103,7 @@ ScorePlayer
   sub treble {
       my ( %args ) = @_;
       my $treble = sub {
-          ...; # Add notes or rests to the score in an
-               # anonymous subroutine, and return that
-               # coderef.
+          ...; # Add notes or rests to the score
       }
       return $treble;
   }
