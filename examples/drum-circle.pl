@@ -119,7 +119,7 @@ sub phrase {
     return $phrase;
 }
 
-my @phrases = map { \&phrase } 1 .. $opts{drummers};
+my @phrases = (\&phrase) x $opts{drummers};
 
 MIDI::RtMidi::FFI::ScorePlayer->new(
     score   => $d->score,
