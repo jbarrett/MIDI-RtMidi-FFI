@@ -140,7 +140,7 @@ Instantiate a new C<MIDI::RtMidi::FFI::ScorePlayer> object.
 
 =head2 play
 
-Play the MIDI score in real-time.
+Play a given MIDI score in real-time.
 
 =head1 SEE ALSO
 
