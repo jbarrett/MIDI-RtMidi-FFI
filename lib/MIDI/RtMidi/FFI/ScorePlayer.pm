@@ -12,6 +12,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
         $opts{repeats} ||= 1;
+
         $opts{device} = RtMidiOut->new;
 
         # Linux: Timidity support requires timidity in daemon mode
@@ -30,6 +31,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         $opts{device}->open_virtual_port( 'foo' ) if $^O eq 'darwin';
         # Alternatively you can use FluidSynth
         $opts{device}->open_port_by_name( $opts{port} );
+
         bless \%opts, $class;
     }
 
