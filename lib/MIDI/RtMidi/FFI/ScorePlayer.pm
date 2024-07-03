@@ -120,7 +120,7 @@ MIDI::RtMidi::FFI::ScorePlayer
 
   MIDI::RtMidi::FFI::ScorePlayer->new(
       score    => $score,
-      phrases  => [ \&treble, \&bass ],
+      phrases  => [ \&treble, \&bass ], # phrase functions
       common   => \%common, # arguments to give to the phrase functions
       repeats  => 4, # number of repeated synched phrases (default: 1)
       sleep    => 2, # number of seconds to sleep between loops (default: 1)
