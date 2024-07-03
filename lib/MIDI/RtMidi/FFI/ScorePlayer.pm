@@ -98,7 +98,7 @@ ScorePlayer
 
   my %common = ( seen => {}, etc => '...', );
 
-  # Generate *all* phrases based on the given phrase number.
+  # Generate *all* phrases based on a given phrase number.
   sub phrase_generator {
       my ( %args ) = @_;
       ...;
