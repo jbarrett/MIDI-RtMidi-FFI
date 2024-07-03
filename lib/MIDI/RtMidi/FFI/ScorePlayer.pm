@@ -1,4 +1,5 @@
 package MIDI::RtMidi::FFI::ScorePlayer {
+
     use strict;
     use warnings;
 
@@ -9,7 +10,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
 
-        $self->{repeats} ||= 1;
+        $opts{repeats} ||= 1;
 
         $opts{device} = RtMidiOut->new;
 
