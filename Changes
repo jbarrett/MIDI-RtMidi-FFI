@@ -9,7 +9,7 @@ Revision history for perl module MIDI::RtMidi::FFI
   - Methods to retrieve all available device info (->get_all_port_{nums,names})
   - "Shortcut" methods for send_message_encoded: ->note_on, ->note_off, ->cc ...
   - MIDI-panic methods
-  - New example : drum circle - thanks to Gene Boggs (GENE)
+  - New example : drum circle - thanks to Gene Boggs (GENE), lfo.pl
   - Expanded docs
     
 0.05 2023-09-18
