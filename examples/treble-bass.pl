@@ -17,7 +17,7 @@ MIDI::RtMidi::FFI::ScorePlayer->new(
   phrases  => [ \&treble, \&bass ],
   common   => \%common,
   repeats  => 4,
-  sleep    => 2,
+  sleep    => 0,
   loop     => 4,
   infinite => 0,
 )->play;
