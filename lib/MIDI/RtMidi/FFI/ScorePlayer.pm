@@ -1,5 +1,8 @@
 package MIDI::RtMidi::FFI::ScorePlayer {
 
+use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Util);
+use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
+
     use strict;
     use warnings;
 
@@ -68,7 +71,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
                     next;
                 }
                 my $useconds = $micros * $event->[1];
-                usleep($useconds) if ( $useconds > 0 && $useconds < 1_000_000 );
+                usleep($useconds) if $useconds > 0 && $useconds < 1_000_000;
                 $self->device->send_event( $event->[0] => @{ $event }[ 2 .. $#$event ] );
             }
             sleep( $self->{sleep} );
