@@ -2,9 +2,6 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     use strict;
     use warnings;
 
-    use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
-    use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Util);
-
     use MIDI::RtMidi::FFI::Device ();
     use MIDI::Util qw/ get_microseconds score2events /;
     use Time::HiRes qw/ usleep /;
@@ -56,8 +53,6 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my ( $self ) = @_;
         while( 1 ) {
             $self->_sync_phrases;
-use Data::Dumper::Compact qw(ddc);
-warn __PACKAGE__,' L',__LINE__,' ',ddc($self->{score}, {max_width=>128});
             my $micros = get_microseconds($self->{score});
             my $events = score2events($self->{score});
             for my $event (@{ $events }) {
