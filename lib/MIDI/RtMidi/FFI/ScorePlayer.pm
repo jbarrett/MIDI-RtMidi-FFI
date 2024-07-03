@@ -11,6 +11,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my ( $class, %opts ) = @_;
 
         $opts{repeats} ||= 1;
+        $opts{sleep}   ||= 1;
 
         $opts{device} = RtMidiOut->new;
 
@@ -68,7 +69,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
                 usleep($useconds) if ( $useconds > 0 && $useconds < 1_000_000 );
                 $self->device->send_event( $event->[0] => @{ $event }[ 2 .. $#$event ] );
             }
-            sleep(2);
+            sleep( $self->{sleep} );
             $self->_reset_score;
         }
     }
