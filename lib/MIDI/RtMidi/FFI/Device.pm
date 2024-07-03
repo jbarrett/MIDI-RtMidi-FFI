@@ -1562,7 +1562,7 @@ again."> - again, this is fine - it fits in with expectations so far.
 
 I<"When an MSB is received, the receiver should set its concept of the LSB
 to zero">. This, to me, is ambiguous. Should our CC now be set to
-MSB << 7 + 0? Or is it an instruction to forget any existing LSB value and
+C<( $msb << 7 ) + 0>? Or is it an instruction to forget any existing LSB value and
 await the transmission of a fresh one before constructing a CC value?
 
 With the former approach you could imagine a descending control passing a
@@ -1580,14 +1580,14 @@ MSB threshold (a large jump in LSB).
 
 Some implementations send LSB first, MSB second. If a LSB/MSB pair is sent
 each time, this is easily handled. If a pair is sent, then fine control
-is sent via LSB we have a problem. When we cross a MSB threshold,
+is sent subsequently via LSB we have a problem. When we cross a MSB threshold,
 we need to wait for the new MSB value before we can construct the complete
 CC value. This means we need to somehow know when to stop performing fine
 control with new LSB values, and await a new MSB value - we are back to
 heuristic detection, looking for LSB jumps.
 
 All to say, there are some ambiguities in how this is handled, and there
-are endless variations between devices.
+are endless variations between different devices and implementations.
 
 The second problem is needing to write explicit 14 bit message handling in
 each project individually. This module intends to obviate some of this by
@@ -1703,7 +1703,7 @@ reset to zero and a new value is returned.
 
 =head3 await (recommended)
 
-This is the same as 'midi' mode, but it aleays awaits a LSB message before
+This is the same as 'midi' mode, but it always awaits a LSB message before
 returning a value.
 
 This is likely the most compatible and reliable mode for decoding.
@@ -1937,7 +1937,7 @@ A typical FluidSynth invocation on Linux might be:
 =head1 General MIDI on MacOS
 
 An Audio Unit named DLSMusicDevice is available for use within GarageBand,
-Logic, and other Digital Audio Workstation (DAW) software on Mac OS X.
+Logic, and other Digital Audio Workstation (DAW) software on MacOS.
 
 If you wish to use banks other than the default QuickTime set, place
 them in C<~/Library/Audio/Sounds/Banks/>. You may now create a new track
@@ -1957,11 +1957,10 @@ your DAW and be ready to send performance info to DLSMusicDevice:
 The 'MUS 214: MIDI Composition' channel on YouTube has a
 L<Video on setting up DLSMusicDevice in Logic|https://youtu.be/YIb-H10yzyI>.
 
-A potential alternative option is FluidSynth. This has more limited support
-for DLS banks but should load SF2/3 banks just fine. See
-L</General MIDI on Linux> for links to get started using FluidSynth.
-
-A typical FluidSynth invocation on MacOS might be:
+A potential alternative option is FluidSynth. This has more limited support for
+DLS banks but should load SF2/3 banks just fine. See L</General MIDI on Linux>
+for links to get started using FluidSynth. A typical FluidSynth invocation on
+MacOS might be:
 
     % fluidsynth -a coreaudio -m coremidi your_soundfont.sf2
 
