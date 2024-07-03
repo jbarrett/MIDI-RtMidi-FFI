@@ -89,7 +89,7 @@ __END__
 
 =head1 NAME
 
-ScorePlayer
+MIDI::RtMidi::FFI::ScorePlayer
 
 =head1 SYNOPSIS
 
