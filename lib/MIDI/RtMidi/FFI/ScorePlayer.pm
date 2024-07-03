@@ -96,7 +96,7 @@ ScorePlayer
 
   my $score = setup_score();
 
-  my %common = ( seen => {}, etc => '...', }
+  my %common = ( seen => {}, etc => '...', );
 
   sub phrase_generator {
       # Add notes and rests to the score given a set of
