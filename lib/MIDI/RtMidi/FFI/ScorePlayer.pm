@@ -82,7 +82,7 @@ package MIDI::RtMidi::FFI::ScorePlayer {
         my ( $self ) = @_;
         my @parts;
         my $n = 1;
-        push @parts, $_->( %{ $self->{common} }, phrase => $n++ ) 
+        push @parts, $_->( %{ $self->{common} }, _part => $n++ ) 
             for @{ $self->{parts} };
         $self->{score}->synch( @parts ) # Play the parts simultaneously
             for 1 .. $self->{repeats};

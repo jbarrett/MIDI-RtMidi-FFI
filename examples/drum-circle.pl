@@ -94,13 +94,13 @@ sub part {
     my $motif = $args{generator}->motif; # Create a rhythmic phrase
 
     # Tell them what they've won!
-    printf "%*d. %-19s: %s", $args{width}, $args{phrase}, $drum_name, ddc($motif);
+    printf "%*d. %-19s: %s", $args{width}, $args{_part}, $drum_name, ddc($motif);
 
     # Either rest or play the motif
     my $part = sub {
         for my $n (1 .. $args{drummer}->bars + $args{options}->{extend}) {
             # If we are not up yet, then rest
-            if ($n < ($args{phrase} * $args{options}->{measures})) {
+            if ($n < ($args{_part} * $args{options}->{measures})) {
                 $args{drummer}->rest($args{rest});
                 next;
             }
