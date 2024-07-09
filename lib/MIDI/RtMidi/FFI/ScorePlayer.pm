@@ -108,9 +108,9 @@ MIDI::RtMidi::FFI::ScorePlayer
 =head1 SYNOPSIS
 
   use MIDI::RtMidi::FFI::ScorePlayer ();
-  use MIDI::Util qw(setup_score);
+  use MIDI::Simple ();
 
-  my $score = setup_score();
+  my $score = MIDI::Simple->new_score;
 
   my %common = ( score => $score, seen => {}, etc => '...', );
 
