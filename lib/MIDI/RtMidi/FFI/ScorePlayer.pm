@@ -132,7 +132,7 @@ MIDI::RtMidi::FFI::ScorePlayer
       repeats  => 4, # number of repeated synched parts (default: 1)
       sleep    => 2, # number of seconds to sleep between loops (default: 1)
       loop     => 4, # loop limit if finite (default: 1)
-      infinite => 0, # loop infinitely or with the limit (default: 1)
+      infinite => 0, # loop infinitely (default: 1)
   )->play;
 
 =head1 DESCRIPTION
