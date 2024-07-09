@@ -1,8 +1,5 @@
 package MIDI::RtMidi::FFI::ScorePlayer {
 
-use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/sandbox/$_/lib" } qw(MIDI-Util);
-use if $ENV{USER} eq 'gene', lib => map { "$ENV{HOME}/repos/$_/lib" } qw(MIDI-RtMidi-FFI);
-
     use strict;
     use warnings;
 
