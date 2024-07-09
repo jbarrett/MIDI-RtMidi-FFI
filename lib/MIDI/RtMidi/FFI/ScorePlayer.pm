@@ -10,6 +10,10 @@ package MIDI::RtMidi::FFI::ScorePlayer {
     sub new {
         my ( $class, %opts ) = @_;
 
+        die 'A MIDI score object is required' unless $opts{score};
+
+        $opts{parts}    ||= [];
+        $opts{common}   ||= {};
         $opts{repeats}  ||= 1;
         $opts{sleep}    //= 1;
         $opts{loop}     ||= 1;
