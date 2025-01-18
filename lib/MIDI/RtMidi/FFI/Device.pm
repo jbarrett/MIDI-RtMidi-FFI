@@ -894,6 +894,7 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 
 sub send_message_encoded {
     my ( $self, @event ) = @_;
+    @event = @{ $event[ 0 ] } if ( @event == 1 && ref $event[ 0 ] eq 'ARRAY' );
     if ( $event[0] eq 'control_change' ) {
         my $rpn = $self->get_rpn( $event[1] );
         my $nrpn = $self->get_nrpn( $event[1] );
