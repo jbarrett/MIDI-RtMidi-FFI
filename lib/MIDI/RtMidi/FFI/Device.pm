@@ -1983,6 +1983,11 @@ MacOS might be:
 
 =head1 KNOWN ISSUES
 
+The callback interface does not currently work on threaded perls. Most, if not
+all, perls currently built for Windows are threaded. I have been working around
+this with a non-threaded Perl built within the cygwin environment with
+perlbrew.
+
 Use of L<MIDI::Event> is a bit of a hack for convenience, exploiting the
 similarity of realtime MIDI messages and MIDI song file messages. It may break
 in unexpected ways if used for large SysEx messages or other "non-music"
