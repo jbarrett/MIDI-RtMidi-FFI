@@ -1015,7 +1015,7 @@ or decoding mode - it probably shouldn't be used mid performance or
 playback unless you seek odd side effects.
 
 If a RPN or NRPN is active, this 14 bit mode will not have an effect on CC6.
-See </set_set_rpn_14bit_mode> and </set_nrpn_14bit_mode>
+See L</set_set_rpn_14bit_mode> and L</set_nrpn_14bit_mode>
 
 =cut
 
@@ -1683,7 +1683,7 @@ MIDI standard:
 Callbacks should not call the send_message_encoded, send_event, control_change
 or cc methods as these may invoke further 14 bit message handling, potentially
 causing an
-infinite loop. The </send_message_encoded_cb> method exists for sending
+infinite loop. The L</send_message_encoded_cb> method exists for sending
 messages within 14 bit CC callbacks.
 
 =head2 For Input (Decoding)
