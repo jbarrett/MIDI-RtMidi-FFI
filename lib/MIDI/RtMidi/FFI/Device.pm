@@ -681,7 +681,7 @@ sub get_message {
     rtmidi_in_get_message( $self->{device}, $self->{queue_size_limit} );
 }
 
-=head2 get_event
+=head2 get_message_decoded
 
     $device->get_message_decoded();
 
