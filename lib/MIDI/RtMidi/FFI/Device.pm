@@ -2016,6 +2016,8 @@ L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
 
 L<MIDI CC & NRPN database|https://midi.guide/>
 
+L<Sound on Sound's MIDI Basics series|https://www.soundonsound.com/series/midi-basics>
+
 L<Phil Rees Music Tech page on NRPN/RPN|http://www.philrees.co.uk/nrpnq.htm>
 
 L<MIDI::RtMidi::FFI>
