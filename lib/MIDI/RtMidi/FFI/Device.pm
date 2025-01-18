@@ -1422,7 +1422,7 @@ sub disable_nrpn_14bit_mode {
 }
 *disable_nrpn_14bit_callback = \&disable_nrpn_14bit_mode;
 
-=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
+=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex, clock
 
 Wrapper methods for L</send_message_encoded>, e.g.
 
@@ -1444,6 +1444,7 @@ is equivalent to:
 *sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
 *sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
 *sysex = sub { shift->send_event( sysex => @_ ) };
+*clock = sub { shift->send_event( clock => @_ ) };
 
 =head2 cc
 
