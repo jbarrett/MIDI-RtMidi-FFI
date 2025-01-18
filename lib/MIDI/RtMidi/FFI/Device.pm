@@ -1423,7 +1423,7 @@ sub disable_nrpn_14bit_mode {
 }
 *disable_nrpn_14bit_callback = \&disable_nrpn_14bit_mode;
 
-=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex, clock
+=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex, clock, start, stop, continue
 
 Wrapper methods for L</send_message_encoded>, e.g.
 
@@ -1435,17 +1435,20 @@ is equivalent to:
 
 =cut
 
-*note_off = sub { shift->send_event( note_off => @_ ) };
-*note_on = sub { shift->send_event( note_on => @_ ) };
-*control_change = sub { shift->send_event( control_change => @_ ) };
-*patch_change = sub { shift->send_event( patch_change => @_ ) };
-*key_after_touch = sub { shift->send_event( key_after_touch => @_ ) };
-*channel_after_touch = sub { shift->send_event( channel_after_touch => @_ ) };
-*pitch_wheel_change = sub { shift->send_event( pitch_wheel_change => @_ ) };
-*sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
-*sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
-*sysex = sub { shift->send_event( sysex => @_ ) };
-*clock = sub { shift->send_event( clock => @_ ) };
+sub note_off { shift->send_event( note_off => @_ ) };
+sub note_on { shift->send_event( note_on => @_ ) };
+sub control_change { shift->send_event( control_change => @_ ) };
+sub patch_change { shift->send_event( patch_change => @_ ) };
+sub key_after_touch { shift->send_event( key_after_touch => @_ ) };
+sub channel_after_touch { shift->send_event( channel_after_touch => @_ ) };
+sub pitch_wheel_change { shift->send_event( pitch_wheel_change => @_ ) };
+sub sysex_f0 { shift->send_event( sysex_f0 => @_ ) };
+sub sysex_f7 { shift->send_event( sysex_f7 => @_ ) };
+sub sysex { shift->send_event( sysex => @_ ) };
+sub clock { shift->send_event( clock => @_ ) };
+sub start { shift->send_event( start => @_ ) };
+sub stop { shift->send_event( stop => @_ ) };
+sub continue { shift->send_event( continue => @_ ) };
 
 =head2 cc
 
