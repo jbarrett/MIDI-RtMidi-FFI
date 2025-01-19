@@ -454,7 +454,7 @@ sub open_port_by_name {
 
     $device->get_all_port_nums();
 
-Return a hashref of available devices the form { port number => port name }
+Return a hashref of ports visible to the device, of the form { port number => port name }
 
 =cut
 
@@ -470,7 +470,7 @@ sub get_all_port_nums {
 
     $device->get_all_port_names();
 
-Return a hashref of available devices of the form { port name => port number }
+Return a hashref of ports visible to the device, of the form { port name => port number }
 
 =cut
 
