@@ -348,7 +348,7 @@ Getters for RtMidiWrapper device struct members
 
 =cut
 
-sub ok   { $_[0]->{device}->ok }
+sub ok   { shift->{device}->ok( @_ ) }
 sub msg  { $_[0]->{device}->msg }
 sub data { $_[0]->{device}->data }
 sub ptr  { $_[0]->{device}->ptr }
@@ -369,7 +369,15 @@ for details and possible workarounds.
 
 sub open_virtual_port {
     my ( $self, $port_name ) = @_;
+    croak "Virtual ports unsupported on this platform"
+        if $self->get_current_api == RTMIDI_API_WINDOWS_MM;
+    $self->ok(1);
+
     rtmidi_open_virtual_port( $self->{device}, $port_name );
+
+    return 1 if $self->ok;
+
+    croak "Error opening virtual port: " . $self->msg;
 }
 
 =head2 open_port
@@ -384,8 +392,16 @@ See L</open_port_by_name> for a potentially more flexible option.
 
 sub open_port {
     my ( $self, $port_number, $port_name ) = @_;
+    croak "Invalid port number ($port_number)"
+        if ($port_number < 0 || $port_number >= $self->get_port_count);
+    $self->ok(1);
+
     $self->{port_name} = $port_name;
     rtmidi_open_port( $self->{device}, $port_number, $port_name );
+
+    return 1 if $self->ok;
+
+    croak("Error opening port: " . $self->msg);
 }
 
 =head2 get_ports_by_name
@@ -474,7 +490,13 @@ Closes the currently open port
 
 sub close_port {
     my ( $self ) = @_;
+    $self->ok(1);
+
     rtmidi_close_port( $self->{device} );
+
+    return 1 if $self->ok;
+
+    croak "Error closing port: " . $self->msg;
 }
 
 =head2 get_port_count
@@ -1172,6 +1194,10 @@ sub _create_device {
     $self->{api} //= $api_by_name->[1] if $api_by_name;
     $self->{api} //= $rtmidi_api_names->{ unspecified }->[1];
     $self->{device} = $create_dispatch->{ $fn }->( $self->{api}, $self->{name}, $self->{queue_size_limit} );
+
+    croak "Unable to create MIDI $self->{type} device"
+        unless $self->{device}->ok;
+
     $self->{type} eq 'in' && $self->ignore_types(
         $self->{ignore_sysex},
         $self->{ignore_timing},

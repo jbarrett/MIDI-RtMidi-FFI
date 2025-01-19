@@ -5,6 +5,7 @@ Revision history for perl module MIDI::RtMidi::FFI
     - Docs fixes and minor updates
     - Removed panic example, added list_devices example
     - Allow array ref param in send_event / send_message_encoded
+    - ::Device now croaks if creating devices or opening a port fails
 
 0.06 2024-07-02
 
