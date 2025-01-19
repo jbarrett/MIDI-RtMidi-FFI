@@ -480,6 +480,24 @@ sub get_all_port_names {
     }
 }
 
+=head2 print_ports
+
+    $device->print_ports();
+    $device->print_ports( $handle );
+
+Prints the port number and name of all ports visible to the device.
+
+=cut
+
+sub print_ports {
+    my ( $self, $handle ) = @_;
+    $handle //= *STDOUT;
+    my $ports = $self->get_all_port_nums;
+    for my $port_num ( sort { $a <=> $b } keys %{ $ports } ) {
+        print $handle "$port_num: $ports->{ $port_num }\n";
+    }
+}
+
 =head2 close_port
 
     $device->close_port();
