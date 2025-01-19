@@ -431,6 +431,7 @@ sub get_ports_by_name {
     $device->open_port_by_name( [ $name, $othername, qr/anothername/ ] );
 
 Opens the first port found matching the supplied name criteria.
+Returns 1 if a matching port was found and connected to successfully, otherwise 0.
 
 =cut
 
@@ -439,13 +440,13 @@ sub open_port_by_name {
     $portname //= $self->{type} . '-' . time();
     if ( ref $name eq 'ARRAY' ) {
         for ( @{ $name } ) {
-            return if $self->open_port_by_name( $_ );
+            return 1 if $self->open_port_by_name( $_ );
         }
     }
     else {
         my @ports = $self->get_ports_by_name( $name );
         return 0 unless @ports;
-        return !$self->open_port( $ports[0], $portname );
+        return $self->open_port( $ports[0], $portname );
     }
 }
 
