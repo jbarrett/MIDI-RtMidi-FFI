@@ -348,7 +348,7 @@ Getters for RtMidiWrapper device struct members
 
 =cut
 
-sub ok   { $_[0]->{device}->ok }
+sub ok   { shift->{device}->ok( @_ ) }
 sub msg  { $_[0]->{device}->msg }
 sub data { $_[0]->{device}->data }
 sub ptr  { $_[0]->{device}->ptr }
@@ -369,7 +369,15 @@ for details and possible workarounds.
 
 sub open_virtual_port {
     my ( $self, $port_name ) = @_;
+    croak "Virtual ports unsupported on this platform"
+        if $self->get_current_api == RTMIDI_API_WINDOWS_MM;
+    $self->ok(1);
+
     rtmidi_open_virtual_port( $self->{device}, $port_name );
+
+    return 1 if $self->ok;
+
+    croak "Error opening virtual port: " . $self->msg;
 }
 
 =head2 open_port
@@ -384,8 +392,16 @@ See L</open_port_by_name> for a potentially more flexible option.
 
 sub open_port {
     my ( $self, $port_number, $port_name ) = @_;
+    croak "Invalid port number ($port_number)"
+        if ($port_number < 0 || $port_number >= $self->get_port_count);
+    $self->ok(1);
+
     $self->{port_name} = $port_name;
     rtmidi_open_port( $self->{device}, $port_number, $port_name );
+
+    return 1 if $self->ok;
+
+    croak("Error opening port: " . $self->msg);
 }
 
 =head2 get_ports_by_name
@@ -474,7 +490,13 @@ Closes the currently open port
 
 sub close_port {
     my ( $self ) = @_;
+    $self->ok(1);
+
     rtmidi_close_port( $self->{device} );
+
+    return 1 if $self->ok;
+
+    croak "Error closing port: " . $self->msg;
 }
 
 =head2 get_port_count
@@ -681,7 +703,7 @@ sub get_message {
     rtmidi_in_get_message( $self->{device}, $self->{queue_size_limit} );
 }
 
-=head2 get_event
+=head2 get_message_decoded
 
     $device->get_message_decoded();
 
@@ -894,6 +916,7 @@ Type 'out' only. Sends a L<MIDI::Event> encoded message to the open port.
 
 sub send_message_encoded {
     my ( $self, @event ) = @_;
+    @event = @{ $event[ 0 ] } if ( @event == 1 && ref $event[ 0 ] eq 'ARRAY' );
     if ( $event[0] eq 'control_change' ) {
         my $rpn = $self->get_rpn( $event[1] );
         my $nrpn = $self->get_nrpn( $event[1] );
@@ -1015,7 +1038,7 @@ or decoding mode - it probably shouldn't be used mid performance or
 playback unless you seek odd side effects.
 
 If a RPN or NRPN is active, this 14 bit mode will not have an effect on CC6.
-See </set_set_rpn_14bit_mode> and </set_nrpn_14bit_mode>
+See L</set_set_rpn_14bit_mode> and L</set_nrpn_14bit_mode>
 
 =cut
 
@@ -1171,6 +1194,10 @@ sub _create_device {
     $self->{api} //= $api_by_name->[1] if $api_by_name;
     $self->{api} //= $rtmidi_api_names->{ unspecified }->[1];
     $self->{device} = $create_dispatch->{ $fn }->( $self->{api}, $self->{name}, $self->{queue_size_limit} );
+
+    croak "Unable to create MIDI $self->{type} device"
+        unless $self->{device}->ok;
+
     $self->{type} eq 'in' && $self->ignore_types(
         $self->{ignore_sysex},
         $self->{ignore_timing},
@@ -1422,7 +1449,7 @@ sub disable_nrpn_14bit_mode {
 }
 *disable_nrpn_14bit_callback = \&disable_nrpn_14bit_mode;
 
-=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex
+=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex, clock, start, stop, continue
 
 Wrapper methods for L</send_message_encoded>, e.g.
 
@@ -1434,16 +1461,20 @@ is equivalent to:
 
 =cut
 
-*note_off = sub { shift->send_event( note_off => @_ ) };
-*note_on = sub { shift->send_event( note_on => @_ ) };
-*control_change = sub { shift->send_event( control_change => @_ ) };
-*patch_change = sub { shift->send_event( patch_change => @_ ) };
-*key_after_touch = sub { shift->send_event( key_after_touch => @_ ) };
-*channel_after_touch = sub { shift->send_event( channel_after_touch => @_ ) };
-*pitch_wheel_change = sub { shift->send_event( pitch_wheel_change => @_ ) };
-*sysex_f0 = sub { shift->send_event( sysex_f0 => @_ ) };
-*sysex_f7 = sub { shift->send_event( sysex_f7 => @_ ) };
-*sysex = sub { shift->send_event( sysex => @_ ) };
+sub note_off { shift->send_event( note_off => @_ ) };
+sub note_on { shift->send_event( note_on => @_ ) };
+sub control_change { shift->send_event( control_change => @_ ) };
+sub patch_change { shift->send_event( patch_change => @_ ) };
+sub key_after_touch { shift->send_event( key_after_touch => @_ ) };
+sub channel_after_touch { shift->send_event( channel_after_touch => @_ ) };
+sub pitch_wheel_change { shift->send_event( pitch_wheel_change => @_ ) };
+sub sysex_f0 { shift->send_event( sysex_f0 => @_ ) };
+sub sysex_f7 { shift->send_event( sysex_f7 => @_ ) };
+sub sysex { shift->send_event( sysex => @_ ) };
+sub clock { shift->send_event( clock => @_ ) };
+sub start { shift->send_event( start => @_ ) };
+sub stop { shift->send_event( stop => @_ ) };
+sub continue { shift->send_event( continue => @_ ) };
 
 =head2 cc
 
@@ -1683,7 +1714,7 @@ MIDI standard:
 Callbacks should not call the send_message_encoded, send_event, control_change
 or cc methods as these may invoke further 14 bit message handling, potentially
 causing an
-infinite loop. The </send_message_encoded_cb> method exists for sending
+infinite loop. The L</send_message_encoded_cb> method exists for sending
 messages within 14 bit CC callbacks.
 
 =head2 For Input (Decoding)
@@ -1981,6 +2012,11 @@ MacOS might be:
 
 =head1 KNOWN ISSUES
 
+The callback interface does not currently work on threaded perls. Most, if not
+all, perls currently built for Windows are threaded. I have been working around
+this with a non-threaded Perl built within the cygwin environment with
+perlbrew.
+
 Use of L<MIDI::Event> is a bit of a hack for convenience, exploiting the
 similarity of realtime MIDI messages and MIDI song file messages. It may break
 in unexpected ways if used for large SysEx messages or other "non-music"
@@ -2008,6 +2044,8 @@ L<Currently open MIDI::RtMidi::FFI issues on GitHub|https://github.com/jbarrett/
 L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
 
 L<MIDI CC & NRPN database|https://midi.guide/>
+
+L<Sound on Sound's MIDI Basics series|https://www.soundonsound.com/series/midi-basics>
 
 L<Phil Rees Music Tech page on NRPN/RPN|http://www.philrees.co.uk/nrpnq.htm>
 
