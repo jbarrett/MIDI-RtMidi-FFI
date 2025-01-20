@@ -408,6 +408,7 @@ sub open_port {
 
     $device->get_ports_by_name( $name );
     $device->get_ports_by_name( qr/name/ );
+    $device->open_port_by_name( [ $name, $othername, qr/anothername/ ] );
 
 Returns a list of port numbers matching the supplied name criteria.
 
@@ -415,13 +416,21 @@ Returns a list of port numbers matching the supplied name criteria.
 
 sub get_ports_by_name {
     my ( $self, $name ) = @_;
-    my @ports = grep {
-        my $pn = $self->get_port_name( $_ );
-        ref $name eq 'Regexp'
-            ? $pn =~ $name
-            : $pn eq $name
-    } 0..($self->get_port_count-1);
-    return @ports;
+    my @ports;
+    if ( ref $name eq 'ARRAY' ) {
+        for ( @{ $name } ) {
+            push @ports, $self->get_ports_by_name( $_ );
+        }
+    }
+    else {
+        push @ports, grep {
+            my $pn = $self->get_port_name( $_ );
+            ref $name eq 'Regexp'
+                ? $pn =~ $name
+                : $pn eq $name
+        } 0..($self->get_port_count-1);
+    }
+    @ports;
 }
 
 =head2 open_port_by_name
@@ -431,23 +440,15 @@ sub get_ports_by_name {
     $device->open_port_by_name( [ $name, $othername, qr/anothername/ ] );
 
 Opens the first port found matching the supplied name criteria.
-Returns 1 if a matching port was found and connected to successfully, otherwise 0.
 
 =cut
 
 sub open_port_by_name {
     my ( $self, $name, $portname ) = @_;
     $portname //= $self->{type} . '-' . time();
-    if ( ref $name eq 'ARRAY' ) {
-        for ( @{ $name } ) {
-            return 1 if $self->open_port_by_name( $_ );
-        }
-    }
-    else {
-        my @ports = $self->get_ports_by_name( $name );
-        return 0 unless @ports;
-        return $self->open_port( $ports[0], $portname );
-    }
+    my @ports = $self->get_ports_by_name( $name );
+    croak "No available device found matching supplied criteria" unless @ports;
+    $self->open_port( $ports[0], $portname );
 }
 
 =head2 get_all_port_nums
