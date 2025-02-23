@@ -761,7 +761,7 @@ message. This is no longer the case.
 
 Decodes the passed MIDI byte string. Some messages, such as clock control,
 may be decoded by this module. The most common mesage types are passed
-through to L<Midi::Event>.
+through to L<MIDI::Event>.
 
 The most common message types are:
 
@@ -807,7 +807,7 @@ Additional message types handled by this module are:
 
 =back
 
-See L<Midi::Event> documentation for details on other events handled by
+See L<MIDI::Event> documentation for details on other events handled by
 that module, though keep in mind that a realtime message will not have the
 I<dtime> parameter.
 
@@ -2071,9 +2071,9 @@ L<Currently open MIDI::RtMidi::FFI issues on GitHub|https://github.com/jbarrett/
 
 L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
 
-L<MIDI CC & NRPN database|https://midi.guide/>
-
 L<Sound on Sound's MIDI Basics series|https://www.soundonsound.com/series/midi-basics>
+
+L<MIDI CC & NRPN database|https://midi.guide/>
 
 L<Phil Rees Music Tech page on NRPN/RPN|http://www.philrees.co.uk/nrpnq.htm>
 
