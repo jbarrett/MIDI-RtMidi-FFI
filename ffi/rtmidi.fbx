@@ -1,0 +1,10 @@
+use strict;
+use warnings;
+
+our $DIR;
+
+{
+	alien => ['Alien::RtMidi'],
+  	source => ["$DIR/*.c"],
+	verbose => 2
+};

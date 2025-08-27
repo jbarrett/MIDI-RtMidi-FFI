@@ -41,6 +41,7 @@ sub _load_rtmidi {
                 )
         ]
     );
+    $ffi->bundle;
     return 1;
 }
 
