@@ -5,6 +5,6 @@ our $DIR;
 
 {
 	alien => ['Alien::RtMidi'],
-  	source => ["$DIR/*.c"],
+  	source => ["$DIR/*.cpp"],
 	verbose => 2
 };
