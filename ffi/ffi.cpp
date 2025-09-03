@@ -5,9 +5,44 @@
 
 #ifdef __MINGW32__
 #define pipe(fds) _pipe(fds, 1024, _O_BINARY)
+#else
+#include <unistd.h>
+#endif
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-//int callback_fd( void *device ) {
-int callback_fd( const char* foo ) {
-    printf( "%s : %s\n", rtmidi_get_version(), foo );
+typedef struct {
+    int fd;
+} _cb_descriptor;
+
+void _callback( double deltatime, const unsigned char *message, size_t size, _cb_descriptor *data ) {
+    if( size < 1 ) {
+        return;
+    }
+    write( data->fd, message, size );
 }
+
+int callback_fd( RtMidiInPtr device ) {
+    int pipefd[2], err;
+    err = pipe(pipefd);
+    if ( err < 0 ) {
+        exit( err );
+    }
+    _cb_descriptor *data = (_cb_descriptor*)malloc( sizeof( _cb_descriptor ) );
+
+    rtmidi_in_set_callback( device, (RtMidiCCallback)&_callback, data );
+
+    // set nonblock here?
+    return pipefd[0];
+}
+
+int _free_userdata( RtMidiInPtr device ) {
+    free( device->data );
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+
