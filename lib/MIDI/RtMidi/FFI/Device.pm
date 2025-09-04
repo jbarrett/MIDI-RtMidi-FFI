@@ -610,6 +610,7 @@ sub get_fd {
 sub set_callback {
     my ( $self, $cb, $data ) = @_;
     croak "Unable to set_callback for device type : $self->{type}" unless $self->{type} eq 'in';
+    $self->cancel_callback if $self->{callback};
     $self->{callback} = rtmidi_in_set_callback( $self->{device}, $cb, $data );
 }
 
@@ -636,6 +637,7 @@ sub set_callback_decoded {
     };
     $self->set_callback( $event_cb, $data );
 }
+
 =head2 cancel_callback
 
     $device->cancel_callback();
