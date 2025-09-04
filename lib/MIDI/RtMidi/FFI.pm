@@ -128,7 +128,7 @@ BEGIN {
     };
 
     my %binds_4 = (
-        callback_fd                 => [ ['RtMidiInPtr'] => 'int' ],
+        callback_fd                 => [ ['RtMidiInPtr*'] => 'int' ],
         rtmidi_api_display_name     => [ ['enum'] => 'string' ],
         rtmidi_api_name             => [ ['enum'] => 'string' ],
         rtmidi_compiled_api_by_name => [ ['string'] => 'enum' ],
