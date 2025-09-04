@@ -39,7 +39,7 @@ int callback_fd( RtMidiInPtr device ) {
     return pipefd[0];
 }
 
-int _free_userdata( RtMidiInPtr device ) {
+void _free_userdata( RtMidiInPtr device ) {
     free( device->data );
 }
 
