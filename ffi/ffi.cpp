@@ -30,10 +30,11 @@ int callback_fd( RtMidiInPtr device ) {
         exit( err );
     }
     _cb_descriptor *data = (_cb_descriptor*)malloc( sizeof( _cb_descriptor ) );
+    data->fd = pipefd[1];
 
     rtmidi_in_set_callback( device, (RtMidiCCallback)&_callback, data );
 
-    // set nonblock here?
+    fcntl( pipefd[0], F_SETFL, O_NONBLOCK );
     return pipefd[0];
 }
 
