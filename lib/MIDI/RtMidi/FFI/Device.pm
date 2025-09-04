@@ -602,6 +602,11 @@ callbacks into your program.
 
 =cut
 
+sub get_fd {
+    my ( $self ) = @_;
+    callback_fd( $self->{device} );
+}
+
 sub set_callback {
     my ( $self, $cb, $data ) = @_;
     croak "Unable to set_callback for device type : $self->{type}" unless $self->{type} eq 'in';
