@@ -1,13 +1,14 @@
 #include <ffi_platypus_bundle.h>
-#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <rtmidi_c.h>
 
 #ifdef __MINGW32__
-#define pipe(fds) _pipe(fds, 1024, _O_BINARY)
-#else
-#include <unistd.h>
+#include <windows.h>
+#include <fcntl.h>
+#define pipe(fds) _pipe( fds, 1024, _O_BINARY )
 #endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
