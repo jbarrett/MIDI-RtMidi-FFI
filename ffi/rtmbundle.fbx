@@ -6,5 +6,6 @@ our $DIR;
 {
     alien  => ['Alien::RtMidi'],
     source => ["$DIR/*.cpp"],
+    libs   => $^O eq 'MSWin32' ? '-lrtmidi -lwinmm' : '',
     verbose => 2,
 };
