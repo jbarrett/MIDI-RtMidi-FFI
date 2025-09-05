@@ -24,6 +24,7 @@ void _callback( double deltatime, const unsigned char *message, size_t size, _cb
     write( data->fd, message, size );
 }
 
+RTMIDIAPI
 int callback_fd( RtMidiInPtr device ) {
     int pipefd[2], err;
     err = pipe(pipefd);
@@ -39,6 +40,7 @@ int callback_fd( RtMidiInPtr device ) {
     return pipefd[0];
 }
 
+RTMIDIAPI
 void _free_userdata( RtMidiInPtr device ) {
     free( device->data );
 }
