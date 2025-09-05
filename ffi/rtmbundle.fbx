@@ -4,7 +4,7 @@ use warnings;
 our $DIR;
 
 {
-	alien => ['Alien::RtMidi'],
-  	source => ["$DIR/*.cpp"],
-	verbose => 2
+    alien  => ['Alien::RtMidi'],
+    source => ["$DIR/*.cpp"],
+    verbose => 2,
 };
