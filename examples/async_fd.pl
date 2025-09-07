@@ -9,17 +9,20 @@ use MIDI::RtMidi::FFI::Device;
 
 my $loop = IO::Async::Loop->new;
 my $midi_in = RtMidiIn->new();
-$midi_in->open_port_by_name( qr/sz/i );
+$midi_in->open_port_by_name( qr/loop/i );
 
+my $fh = $midi_in->get_fh;
 my $stream = IO::Async::Stream->new(
-    read_fileno => $midi_in->get_fd,
+    #read_fileno => $midi_in->get_fd,
+    read_handle => $fh,
     on_read => sub ( $self, $buffref, $eof ) {
 
         say unpack 'H*', $$buffref;
 
         $$buffref = "";
         return 0;
-    }
+    },
+    on_read_error => sub { die @_ }
 );
 
 my $tick = 0;

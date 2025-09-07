@@ -602,9 +602,9 @@ callbacks into your program.
 
 =cut
 
-sub get_fd {
+sub get_fh {
     my ( $self ) = @_;
-    callback_fd( $self->{device} );
+    async_handle( $self->{device} );
 }
 
 sub set_callback {

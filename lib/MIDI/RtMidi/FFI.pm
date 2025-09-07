@@ -7,11 +7,15 @@ use FFI::Platypus 2.00;
 use FFI::Platypus::Memory qw/ malloc free /;
 use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
 use FFI::CheckLib 0.25 qw/ find_lib_or_exit /;
+use IO::Socket;
+use Socket;
 use Carp;
 
 our $VERSION = '0.00';
 
 # ABSTRACT: Bindings for librtmidi - Realtime MIDI library
+
+my $WINDOWS = $^O eq 'MSWin32';
 
 {
     package RtMidiWrapper;
@@ -128,7 +132,7 @@ BEGIN {
     };
 
     my %binds_4 = (
-        callback_fd                 => [ ['RtMidiInPtr*'] => 'int' ],
+        callback_fd                 => [ ['RtMidiInPtr*', 'int'] => 'int', \&_callback_fd ],
         rtmidi_api_display_name     => [ ['enum'] => 'string' ],
         rtmidi_api_name             => [ ['enum'] => 'string' ],
         rtmidi_compiled_api_by_name => [ ['string'] => 'enum' ],
@@ -173,6 +177,7 @@ sub _sorted_enum_keys {
 
 sub _exports {
     (
+        'async_handle',
         'rtmidi_get_version',
         sort( keys %binds ),
         _sorted_enum_keys( $enum_RtMidiApi ),
@@ -230,6 +235,30 @@ sub _in_set_callback {
     my $closure = $ffi->closure( $callback );
     $sub->( $dev, $closure );
     return $closure;
+}
+
+sub _callback_fd {
+    my ( $sub, $dev, $fd ) = @_;
+    $fd //= 0;
+    return $sub->( $dev, $fd );
+}
+
+my @retain;
+sub async_handle {
+    my ( $dev ) = @_;
+    goto WINDOWS if $WINDOWS;
+
+    my $io = IO::Socket->new->fdopen( callback_fd( $dev ), 'w' );
+    $io->blocking(0);
+    return $io;
+
+WINDOWS:
+
+    my ( $rd, $wr ) = IO::Socket->socketpair( AF_UNIX, SOCK_STREAM, PF_UNSPEC );
+    callback_fd( $dev, $wr->fileno );
+    $rd->blocking(0);
+    push @retain, $wr;
+    return $rd;
 }
 
 _init_api();
