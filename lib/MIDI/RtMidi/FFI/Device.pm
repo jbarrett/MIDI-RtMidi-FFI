@@ -604,7 +604,7 @@ callbacks into your program.
 
 sub get_fh {
     my ( $self ) = @_;
-    async_handle( $self->{device} );
+    callback_fh( $self->{device} );
 }
 
 sub set_callback {

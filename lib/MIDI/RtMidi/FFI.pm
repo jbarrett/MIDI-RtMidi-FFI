@@ -7,8 +7,8 @@ use FFI::Platypus 2.00;
 use FFI::Platypus::Memory qw/ malloc free /;
 use FFI::Platypus::Buffer qw/ scalar_to_buffer buffer_to_scalar /;
 use FFI::CheckLib 0.25 qw/ find_lib_or_exit /;
-use IO::Socket;
-use Socket;
+use IO::Handle;
+use IO::Socket qw/ AF_UNIX SOCK_STREAM PF_UNSPEC /;
 use Carp;
 
 our $VERSION = '0.00';
@@ -177,7 +177,7 @@ sub _sorted_enum_keys {
 
 sub _exports {
     (
-        'async_handle',
+        'callback_fh',
         'rtmidi_get_version',
         sort( keys %binds ),
         _sorted_enum_keys( $enum_RtMidiApi ),
@@ -243,22 +243,27 @@ sub _callback_fd {
     return $sub->( $dev, $fd );
 }
 
-my @retain;
-sub async_handle {
+my $retain;
+sub callback_fh {
     my ( $dev ) = @_;
     goto WINDOWS if $WINDOWS;
 
-    my $io = IO::Socket->new->fdopen( callback_fd( $dev ), 'w' );
-    $io->blocking(0);
-    return $io;
+    my $fh = IO::Handle->new->fdopen( callback_fd( $dev ), 'w' );
+    $fh->blocking(0);
+    return $fh;
 
 WINDOWS:
 
     my ( $rd, $wr ) = IO::Socket->socketpair( AF_UNIX, SOCK_STREAM, PF_UNSPEC );
     callback_fd( $dev, $wr->fileno );
     $rd->blocking(0);
-    push @retain, $wr;
+    $retain->{ $dev }->{ cb_writer } = $wr;
     return $rd;
+}
+
+sub _cb_writer {
+    my ( $dev ) = @_;
+    $retain->{ $dev }->{ cb_writer };
 }
 
 _init_api();
