@@ -13,7 +13,6 @@ $midi_in->open_port_by_name( qr/loop/i );
 
 my $fh = $midi_in->get_fh;
 my $stream = IO::Async::Stream->new(
-    #read_fileno => $midi_in->get_fd,
     read_handle => $fh,
     on_read => sub ( $self, $buffref, $eof ) {
 
