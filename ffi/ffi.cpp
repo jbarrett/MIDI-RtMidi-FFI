@@ -69,18 +69,19 @@ int callback_fd( RtMidiInPtr device, int fd ) {
         fprintf(stderr, "Cannot create pipe!\n");
         exit(1);
     }
+    fcntl( pipefd[0], F_SETFL, O_NONBLOCK );
     data->fd = pipefd[1];
 
 #endif
 
     rtmidi_in_set_callback( device, (RtMidiCCallback)&_callback, data );
 
-    fcntl( pipefd[0], F_SETFL, O_NONBLOCK );
     return pipefd[0];
 }
 
 RTMIDIAPI
 void _free_userdata( RtMidiInPtr device ) {
+
     free( device->data );
 }
 
