@@ -20,9 +20,20 @@ void _callback( double deltatime, const char *message, size_t size, _cb_descript
     if( size < 1 ) {
         return;
     }
+
 #ifdef __MINGW32__
 
-    send( data->fd, message, size, 0 );
+    int total = 0;
+    int remains = size;
+    while ( total < size ) {
+        int sent = send( data->fd, message + total, remains, 0 );
+        if ( sent < 0 ) {
+            fprintf(stderr, "socket error\n");
+            exit(668);
+        }
+        remains -= sent;
+        total += sent;
+    }
 
 #else
 
@@ -42,6 +53,12 @@ int callback_fd( RtMidiInPtr device, int fd ) {
     if ( fd <= 0 ) {
         fprintf(stderr, "fd parameter required on win32\n");
         exit(666);
+    }
+
+    fd = _get_osfhandle( fd );
+    if ( fd <= 0 ) {
+        fprintf(stderr, "Unable to retrieve SOCKET for passed fd\n");
+        exit(667);
     }
 
     data->fd = fd;
