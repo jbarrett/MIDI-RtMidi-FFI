@@ -6,6 +6,7 @@
 
 #ifdef __MINGW32__
 #include <winsock2.h>
+#define write( fd, message, size ) send( fd, message, size, 0 )
 #endif
 
 #ifdef __cplusplus
@@ -21,25 +22,18 @@ void _callback( double deltatime, const char *message, size_t size, _cb_descript
         return;
     }
 
-#ifdef __MINGW32__
-
     int total = 0;
     int remains = size;
     while ( total < size ) {
-        int sent = send( data->fd, message + total, remains, 0 );
+        int sent = write( data->fd, message + total, remains );
         if ( sent < 0 ) {
-            fprintf(stderr, "socket error\n");
+            fprintf(stderr, "write error\n");
             exit(668);
         }
         remains -= sent;
         total += sent;
     }
 
-#else
-
-    write( data->fd, message, size );
-
-#endif
 }
 
 RTMIDIAPI
