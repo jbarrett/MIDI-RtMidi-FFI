@@ -1526,6 +1526,7 @@ sub DESTROY {
     # For now, cancel the callback and close the port, then trust the process ...
     $self->cancel_callback;
     $self->close_port;
+    MIDI::RtMidi::FFI::_cleanup( $self->{device} );
     # $fn->( $self->{device} );
 }
 

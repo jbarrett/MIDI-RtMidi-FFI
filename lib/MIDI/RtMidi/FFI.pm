@@ -261,9 +261,13 @@ WINDOWS:
     return $rd;
 }
 
-sub _cb_writer {
+sub _cleanup {
     my ( $dev ) = @_;
-    $retain->{ $dev }->{ cb_writer };
+    if ( $retain->{ $dev }->{ cb_writer } ) {
+        $retain->{ $dev }->{ cb_writer }->close;
+        delete $retain->{ $dev }->{ cb_writer };
+        _free_userdata( $dev );
+    }
 }
 
 _init_api();
