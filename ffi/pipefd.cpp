@@ -59,7 +59,7 @@ int callback_fd( RtMidiInPtr device, int fd ) {
 #else
 
     if ( pipe(pipefd) < 0 ) {
-        perror("Cannot create pipe!";
+        perror("Cannot create pipe!");
         return -1;
     }
     fcntl( pipefd[0], F_SETFL, O_NONBLOCK );
