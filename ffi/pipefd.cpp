@@ -27,8 +27,7 @@ void _callback( double deltatime, const char *message, size_t size, _cb_descript
     while ( total < size ) {
         int sent = write( data->fd, message + total, remains );
         if ( sent < 0 ) {
-            fprintf(stderr, "Callback write error\n");
-            return -1;
+            perror("Callback write error.");
         }
         remains -= sent;
         total += sent;
@@ -45,13 +44,13 @@ int callback_fd( RtMidiInPtr device, int fd ) {
 #ifdef __MINGW32__
 
     if ( fd <= 0 ) {
-        fprintf(stderr, "fd parameter required on win32\n");
+        fprintf(stderr, "Parameter 'fd' required on Win32\n");
         return -1;
     }
 
     fd = _get_osfhandle( fd );
     if ( fd <= 0 ) {
-        fprintf(stderr, "Unable to retrieve SOCKET for passed fd\n");
+        perror("Unable to retrieve Win32 SOCKET for passed fd.");
         return -1;
     }
 
@@ -60,7 +59,7 @@ int callback_fd( RtMidiInPtr device, int fd ) {
 #else
 
     if ( pipe(pipefd) < 0 ) {
-        fprintf(stderr, "Cannot create pipe!\n");
+        perror("Cannot create pipe!";
         return -1;
     }
     fcntl( pipefd[0], F_SETFL, O_NONBLOCK );
