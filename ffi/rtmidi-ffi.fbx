@@ -1,0 +1,13 @@
+use strict;
+use warnings;
+
+our $DIR;
+
+my $WINDOWS = $^O eq 'MSWin32' || $^O eq 'cygwin';
+
+{
+    alien  => ['Alien::RtMidi'],
+    source => ["$DIR/*.cpp"],
+    libs   => $WINDOWS ? '-lrtmidi -lwinmm -lws2_32' : '',
+    verbose => 2,
+};

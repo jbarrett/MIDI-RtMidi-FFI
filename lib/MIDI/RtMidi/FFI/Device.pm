@@ -602,9 +602,15 @@ callbacks into your program.
 
 =cut
 
+sub get_fh {
+    my ( $self ) = @_;
+    callback_fh( $self->{device} );
+}
+
 sub set_callback {
     my ( $self, $cb, $data ) = @_;
     croak "Unable to set_callback for device type : $self->{type}" unless $self->{type} eq 'in';
+    $self->cancel_callback if $self->{callback};
     $self->{callback} = rtmidi_in_set_callback( $self->{device}, $cb, $data );
 }
 
@@ -631,6 +637,7 @@ sub set_callback_decoded {
     };
     $self->set_callback( $event_cb, $data );
 }
+
 =head2 cancel_callback
 
     $device->cancel_callback();
@@ -1519,6 +1526,7 @@ sub DESTROY {
     # For now, cancel the callback and close the port, then trust the process ...
     $self->cancel_callback;
     $self->close_port;
+    MIDI::RtMidi::FFI::_cleanup( $self->{device} );
     # $fn->( $self->{device} );
 }
 
