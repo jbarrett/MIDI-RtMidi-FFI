@@ -28,6 +28,7 @@ void _callback( double deltatime, const char *message, size_t size, _cb_descript
         int sent = write( data->fd, message + total, remains );
         if ( sent < 0 ) {
             perror("Callback write error.");
+            return;
         }
         remains -= sent;
         total += sent;
