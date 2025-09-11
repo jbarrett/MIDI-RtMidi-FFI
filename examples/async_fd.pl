@@ -9,7 +9,7 @@ use MIDI::RtMidi::FFI::Device;
 
 my $loop = IO::Async::Loop->new;
 my $midi_in = RtMidiIn->new();
-$midi_in->open_port_by_name( qr/sz|through|loop/i );
+$midi_in->open_port_by_name( qr/sz|loop/i );
 
 my $fh = $midi_in->get_fh;
 my $stream = IO::Async::Stream->new(
