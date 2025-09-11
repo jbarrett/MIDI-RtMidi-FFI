@@ -10,6 +10,7 @@ $midi_in->open_port_by_name( qr/sz|loop/i );
 
 my $fh = $midi_in->get_fh;
 my $stream = Mojo::IOLoop::Stream->new( $fh );
+$stream->timeout( 0 );
 $stream->on(
     read => sub ( $stream, $bytes ) {
         say unpack 'H*', $bytes;
