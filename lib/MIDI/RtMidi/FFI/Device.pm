@@ -251,7 +251,7 @@ B<api> -
 MIDI API to use. This should be a L<RtMidiApi constant|MIDI::RtMidi::FFI/"RtMidiApi">.
 By default the device should use the first compiled API available. See search
 order notes in
-L<Using Simultaneous Multiple APIs|https://www.music.mcgill.ca/~gary/rtmidi/index.html#multi>
+L<Using Simultaneous Multiple APIs|https://caml.music.mcgill.ca/~gary/rtmidi/index.html#multi>
 on the RtMidi website.
 
 =item *
@@ -2069,7 +2069,7 @@ L<Currently open MIDI::RtMidi::FFI issues on GitHub|https://github.com/jbarrett/
 
 =head1 SEE ALSO
 
-L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
+L<RtMidi|https://caml.music.mcgill.ca/~gary/rtmidi/>
 
 L<Sound on Sound's MIDI Basics series|https://www.soundonsound.com/series/midi-basics>
 
