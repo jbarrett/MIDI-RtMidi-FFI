@@ -15,9 +15,7 @@ my $fh = $midi_in->get_fh;
 my $stream = IO::Async::Stream->new(
     read_handle => $fh,
     on_read => sub ( $self, $buffref, $eof ) {
-
         say unpack 'H*', $$buffref;
-
         $$buffref = "";
         return 0;
     },
