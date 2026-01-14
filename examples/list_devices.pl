@@ -7,7 +7,7 @@ use MIDI::RtMidi::FFI::Device;
 
 my $midi_in = RtMidiIn->new;
 
-my $midi_out = RtMidiIn->new;
+my $midi_out = RtMidiOut->new;
 
 print "Input devices:\n";
 $midi_in->print_ports;

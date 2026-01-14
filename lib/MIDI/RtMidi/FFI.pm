@@ -295,12 +295,12 @@ __END__
 
 =head1 DESCRIPTION
 
-L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/> provides a common API for
+L<RtMidi|https://caml.music.mcgill.ca/~gary/rtmidi/> provides a common API for
 realtime MIDI input/output supporting ALSA, JACK, CoreMIDI and Windows
 Multimedia.
 
 MIDI::RtMidi::FFI provides a more-or-less direct binding to
-L<RtMidi's C Interface|https://www.music.mcgill.ca/~gary/rtmidi/group__C-interface.html>.
+L<RtMidi's C Interface|https://caml.music.mcgill.ca/~gary/rtmidi/group__C-interface.html>.
 MIDI::RtMidi::FFI requires librtmidi v4.0.0 or later, should work with v5.0.0, and perhaps work with later versions.
 
 This is alpha software. Expect crashes, memory issues and possible API changes.
@@ -473,7 +473,7 @@ Send a single message out an open MIDI output port.
 
 =head1 SEE ALSO
 
-L<RtMidi|https://www.music.mcgill.ca/~gary/rtmidi/>
+L<RtMidi|https://caml.music.mcgill.ca/~gary/rtmidi/>
 
 L<Alien::RtMidi>
 
