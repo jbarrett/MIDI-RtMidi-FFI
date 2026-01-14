@@ -604,13 +604,14 @@ callbacks into your program.
 
 sub get_fh {
     my ( $self ) = @_;
-    callback_fh( $self->{device} );
+    $self->cancel_callback;
+    $self->{callback} = callback_fh( $self->{device} );
 }
 
 sub set_callback {
     my ( $self, $cb, $data ) = @_;
     croak "Unable to set_callback for device type : $self->{type}" unless $self->{type} eq 'in';
-    $self->cancel_callback if $self->{callback};
+    $self->cancel_callback;
     $self->{callback} = rtmidi_in_set_callback( $self->{device}, $cb, $data );
 }
 
