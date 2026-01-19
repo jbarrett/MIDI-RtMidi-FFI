@@ -4,3 +4,6 @@
 *~
 .build/
 MIDI-RtMidi-FFI-*/
+rtmidi-*/
+.cyg*
+ffi/_build*/
