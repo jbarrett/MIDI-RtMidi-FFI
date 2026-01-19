@@ -1,6 +1,7 @@
 use v5.26;
 use warnings;
 use Feature::Compat::Class;
+use experimental qw/ signatures /;
 
 class
     MIDI::RtMidi::FFI::AbstractDevice;
@@ -22,7 +23,7 @@ my $rtmidi_api_names = {
 
 my $api_by_name = sub( $api_name ) {
     $rtmidi_api_names->{ $api_name } // [];
-}
+};
 
 field $name :param :reader = "RtMidi Client " . __CLASS__;
 field $api_name :param = undef;
