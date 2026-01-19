@@ -1,4 +1,4 @@
-use strict;
+use v5.26;
 use warnings;
 package MIDI::RtMidi::FFI;
 use base qw/ Exporter /;
@@ -169,6 +169,7 @@ BEGIN {
 
 use constant $enum_RtMidiApi;
 use constant $enum_RtMidiErrorType;
+use constant { BUFFER_SIZE => 4096 };
 
 sub _sorted_enum_keys {
     my ( $enum ) = @_;
@@ -210,7 +211,7 @@ sub _get_port_name_5 {
 
 sub _in_get_message {
     my ( $sub, $dev, $size ) = @_;
-    $size //= 1024;
+    $size //= BUFFER_SIZE;
     my $str = malloc $size;
     $sub->( $dev, $str, \$size );
     my $msg = buffer_to_scalar( $str, $size );
