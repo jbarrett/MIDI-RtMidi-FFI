@@ -1,6 +1,7 @@
 use v5.26;
 use warnings;
 use Feature::Compat::Class;
+use experimental qw/ signatures /;
 
 class MIDI::RtMidi::FFI::Device::Out :isa( MIDI::RtMidi::FFI::AbstractDevice );
 
@@ -11,6 +12,12 @@ use MIDI::RtMidi::FFI ':all';
 use Carp qw/ confess carp /;
 
 field $encoder = MIDI::Stream::Encoder->new;
+
+sub build_device( $class, $api, $name ) {
+    my $device = rtmidi_out_create( $api, $name );
+    confess "Error creating device" if !$device || !$device->ok;
+    $device;
+}
 
 =encoding UTF-8
 
