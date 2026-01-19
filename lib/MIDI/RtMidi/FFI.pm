@@ -187,15 +187,16 @@ sub _exports {
 }
 
 sub _get_compiled_api {
-    my ( $sub, $get ) = @_;
+    my ( $sub ) = @_;
+    state $api_arr;
+    return $api_arr if $api_arr;
     my $num_apis = $sub->();
     return unless $num_apis;
-    return $num_apis unless $get;
     my $apis = malloc RTMIDI_API_NUM * $ffi->sizeof('enum');
     $sub->( $apis, RTMIDI_API_NUM );
-    my $api_arr = $ffi->cast( 'opaque' => "enum[$num_apis]", $apis );
+    $api_arr = $ffi->cast( 'opaque' => "enum[$num_apis]", $apis );
     free $apis;
-    return $api_arr;
+    $api_arr;
 }
 
 sub _get_port_name_5 {
@@ -335,13 +336,9 @@ Returns the best-guess of the version number of the RtMidi library in use.
 
 =head2 rtmidi_get_compiled_api
 
-    rtmidi_get_compiled_api( $return_apis );
-    rtmidi_get_compiled_api( 1 );
+    rtmidi_get_compiled_api();
 
-Returns available APIs.
-
-Pass a true value to return an array ref of available APIs as RT_API constants,
-otherwise a count of available APIs is returned.
+Returns an arrayref of available APIs.
 
 =head2 rtmidi_api_display_name
 
