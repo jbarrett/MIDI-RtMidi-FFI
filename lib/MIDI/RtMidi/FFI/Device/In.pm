@@ -251,9 +251,10 @@ method get_current_api {
 }
 
 method DESTROY {
+    $self->close_port;
     $self->cancel_callback;
     MIDI::RtMidi::FFI::_cleanup( $self->device );
-    rtmidi_in_free( $self->device );
+    # rtmidi_in_free( $self->device );
 }
 
 1;

@@ -160,7 +160,8 @@ An alias for control_change.
 *cc = \&control_change;
 
 method DESTROY {
-    rtmidi_out_free( $self->device );
+    $self->close_port;
+    #rtmidi_out_free( $self->device );
 }
 
 
