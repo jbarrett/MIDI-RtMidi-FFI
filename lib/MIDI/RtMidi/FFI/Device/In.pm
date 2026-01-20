@@ -70,7 +70,7 @@ Ignore incoming active sensing messages (defaults to true)
 
     $device->set_callback( sub( $ts, $msg ) {
         # handle $msg here
-    }, $data );
+    } );
 
 Sets a callback to be executed when an incoming MIDI message is
 received. Your callback receives the time which has elapsed since the previous
@@ -93,7 +93,7 @@ method set_callback( $cb ) {
 
 =head2 set_callback_decoded
 
-    $device->set_callback_decoded( sub( $ts, $msg, $event, $data ) {
+    $device->set_callback_decoded( sub( $ts, $msg, $event ) {
         # handle $msg / $event here
     } );
 

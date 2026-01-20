@@ -227,12 +227,12 @@ sub _out_send_message {
 }
 
 sub _in_set_callback {
-    my ( $sub, $dev, $cb, $data ) = @_;
+    my ( $sub, $dev, $cb ) = @_;
     my $callback = sub {
         my ( $timestamp, $inmsg, $size ) = @_;
         return if !$size;
         my $msg = buffer_to_scalar( $inmsg, $size );
-        $cb->( $timestamp, $msg, $data );
+        $cb->( $timestamp, $msg );
     };
     my $closure = $ffi->closure( $callback );
     $sub->( $dev, $closure );
@@ -416,7 +416,7 @@ Return the RTMIDI_API constant for the given device.
 
 =head2 rtmidi_in_set_callback
 
-    rtmidi_in_set_callback( $device, $coderef, $data );
+    rtmidi_in_set_callback( $device, $coderef );
 
 Set a callback function to be invoked for incoming MIDI messages.
 
