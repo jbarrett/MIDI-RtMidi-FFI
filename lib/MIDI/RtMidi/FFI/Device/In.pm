@@ -207,7 +207,7 @@ Type 'in' only. Gets the next message from the queue, if available.
 =cut
 
 method get_message {
-    rtmidi_in_get_message( $self->{device}, $self->{queue_size_limit} );
+    rtmidi_in_get_message( $self->device );
 }
 
 =head2 get_message_decoded
