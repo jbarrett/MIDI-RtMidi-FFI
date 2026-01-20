@@ -1,5 +1,6 @@
 use strict;
 use warnings;
+use experimental qw/ signatures /;
 
 use Test2::V0;
 use Test::Lib;
@@ -10,7 +11,7 @@ use MIDI::RtMidi::FFI::TestUtils;
 plan skip_all => "Sanity check failed" unless sanity_check;
 
 my ( $in, $out ) = ( newdevice( 'in' ), newdevice() );
-isa_ok( $_, 'MIDI::RtMidi::FFI::Device' ) for ( $in, $out );
+isa_ok( $_, 'MIDI::RtMidi::FFI::AbstractDevice' ) for ( $in, $out );
 
 my @msgs = ( "\x90\x40\x5A", "\x80\x40\x5A" );
 $in->set_callback( sub {

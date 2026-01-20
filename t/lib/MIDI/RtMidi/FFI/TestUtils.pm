@@ -17,13 +17,14 @@ sub newdevice {
     my ( $type, $name ) = @_;
     $type //= 'out';
     $name //= "rtmidi-ffi-test-$type-$time";
-    MIDI::RtMidi::FFI::Device->new(
-        type => $type,
-        name => $name,
-        ignore_sysex => 0,
-        ignore_timing => 0,
-        ignore_sensing => 0,
-    );
+    $type eq 'out'
+        ? RtMidiOut->new( name => $name )
+        : RtMidiIn->new(
+            name => $name,
+            ignore_sysex => 0,
+            ignore_timing => 0,
+            ignore_sensing => 0
+          );
 }
 
 sub connect_devices {
