@@ -53,12 +53,9 @@ documentation on methods specific to input and output devices respectively.
 =cut
 
 use MIDI::RtMidi::FFI ':all';
-use Time::HiRes qw/ time /;
 use Carp qw/ carp confess /;
 
 our $VERSION = '0.00';
-
-my $function_lookup = { reverse %{ $byte_lookup } };
 
 =head1 METHODS
 
@@ -151,27 +148,6 @@ See L</open_port_by_name> for a potentially more flexible option.
 
 Returns a list of port numbers matching the supplied name criteria.
 
-=cut
-
-sub get_ports_by_name {
-    my ( $self, $name ) = @_;
-    my @ports;
-    if ( ref $name eq 'ARRAY' ) {
-        for ( @{ $name } ) {
-            push @ports, $self->get_ports_by_name( $_ );
-        }
-    }
-    else {
-        push @ports, grep {
-            my $pn = $self->get_port_name( $_ );
-            ref $name eq 'Regexp'
-                ? $pn =~ $name
-                : $pn eq $name
-        } 0..($self->get_port_count-1);
-    }
-    @ports;
-}
-
 =head2 open_port_by_name
 
     $device->open_port_by_name( $name );
@@ -180,46 +156,17 @@ sub get_ports_by_name {
 
 Opens the first port found matching the supplied name criteria.
 
-=cut
-
-sub open_port_by_name {
-    my ( $self, $name, $portname ) = @_;
-    $portname //= $self->{type} . '-' . time();
-    my @ports = $self->get_ports_by_name( $name );
-    croak "No available device found matching supplied criteria" unless @ports;
-    $self->open_port( $ports[0], $portname );
-}
-
 =head2 get_all_port_nums
 
     $device->get_all_port_nums();
 
 Return a hashref of ports visible to the device, of the form { port number => port name }
 
-=cut
-
-sub get_all_port_nums {
-    my ( $self ) = @_;
-    +{
-        map { $_ => $self->get_port_name( $_ ) }
-        0..$self->get_port_count-1
-    };
-}
-
 =head2 get_all_port_names
 
     $device->get_all_port_names();
 
 Return a hashref of ports visible to the device, of the form { port name => port number }
-
-=cut
-
-sub get_all_port_names {
-    my ( $self ) = @_;
-    +{
-        reverse %{ $self->get_all_port_nums }
-    }
-}
 
 =head2 print_ports
 
@@ -228,35 +175,11 @@ sub get_all_port_names {
 
 Prints the port number and name of all ports visible to the device.
 
-=cut
-
-sub print_ports {
-    my ( $self, $handle ) = @_;
-    $handle //= *STDOUT;
-    my $ports = $self->get_all_port_nums;
-    for my $port_num ( sort { $a <=> $b } keys %{ $ports } ) {
-        print $handle "$port_num: $ports->{ $port_num }\n";
-    }
-}
-
 =head2 close_port
 
     $device->close_port();
 
 Closes the currently open port
-
-=cut
-
-sub close_port {
-    my ( $self ) = @_;
-    $self->ok(1);
-
-    rtmidi_close_port( $self->{device} );
-
-    return 1 if $self->ok;
-
-    croak "Error closing port: " . $self->msg;
-}
 
 =head2 get_port_count
 
@@ -264,27 +187,11 @@ sub close_port {
 
 Return the number of available MIDI ports to connect to.
 
-=cut
-
-sub get_port_count {
-    my ( $self ) = @_;
-    rtmidi_get_port_count( $self->{device} );
-}
-
 =head2 get_port_name
 
     $self->get_port_name( $port );
 
-Returns the corresponding device name for the supplied port number.
-
-=cut
-
-sub get_port_name {
-    my ( $self, $port_number ) = @_;
-    my $name = rtmidi_get_port_name( $self->{device}, $port_number );
-    $name =~ s/\0$//;
-    return $name;
-}
+Returns the corresponding port name for the supplied port number.
 
 =head2 get_current_api
 
@@ -295,71 +202,6 @@ Returns the MIDI API in use for the device.
 This is a L<RtMidiApi constant|MIDI::RtMidi::FFI/"RtMidiApi">.
 
 =cut
-
-sub get_current_api {
-    my ( $self ) = @_;
-    my $api_dispatch = {
-        rtmidi_in_get_current_api => \&rtmidi_in_get_current_api,
-        rtmidi_out_get_current_api => \&rtmidi_out_get_current_api,
-    };
-    my $fn = "rtmidi_$self->{type}_get_current_api";
-    croak "Unknown device type : $self->{type}" unless $api_dispatch->{ $fn };
-    $api_dispatch->{ $fn }->( $self->{device} );
-}
-
-=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex, clock, start, stop, continue
-
-Wrapper methods for L</send_message_encoded>, e.g.
-
-    $device->note_on( 0x00, 0x40, 0x5a );
-
-is equivalent to:
-
-    $device->send_message_encoded( note_on => 0x00, 0x40, 0x5a );
-
-=cut
-
-sub note_off { shift->send_event( note_off => @_ ) };
-sub note_on { shift->send_event( note_on => @_ ) };
-sub control_change { shift->send_event( control_change => @_ ) };
-sub patch_change { shift->send_event( patch_change => @_ ) };
-sub key_after_touch { shift->send_event( key_after_touch => @_ ) };
-sub channel_after_touch { shift->send_event( channel_after_touch => @_ ) };
-sub pitch_wheel_change { shift->send_event( pitch_wheel_change => @_ ) };
-sub sysex_f0 { shift->send_event( sysex_f0 => @_ ) };
-sub sysex_f7 { shift->send_event( sysex_f7 => @_ ) };
-sub sysex { shift->send_event( sysex => @_ ) };
-sub clock { shift->send_event( clock => @_ ) };
-sub start { shift->send_event( start => @_ ) };
-sub stop { shift->send_event( stop => @_ ) };
-sub continue { shift->send_event( continue => @_ ) };
-
-=head2 cc
-
-An alias for control_change.
-
-=cut
-
-*cc = \&control_change;
-
-my $free_dispatch = {
-    in  => \&rtmidi_in_free,
-    out => \&rtmidi_out_free
-};
-sub DESTROY {
-    my ( $self ) = @_;
-    my $fn = $free_dispatch->{ $self->{type} };
-    # croak "Unable to free type : $self->{type}" unless $fn;
-    # There is an extant issue around the Perl object lifecycle and C++ object lifecycle.
-    # If we free the RtMidiPtr here, a double-free error may occur on process exit.
-    # https://github.com/jbarrett/MIDI-RtMidi-FFI/issues/8
-    #
-    # For now, cancel the callback and close the port, then trust the process ...
-    $self->cancel_callback;
-    $self->close_port;
-    MIDI::RtMidi::FFI::_cleanup( $self->{device} );
-    # $fn->( $self->{device} );
-}
 
 {
     package RtMidiIn;

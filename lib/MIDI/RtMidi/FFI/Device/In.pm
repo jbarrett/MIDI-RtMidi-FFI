@@ -29,7 +29,15 @@ ADJUST {
     $self->ignore_types( $ignore_sysex, $ignore_timing, $ignore_sensing );
 }
 
+=encoding UTF-8
+
+=head1 SYNOPSIS
+
+=head1 DESCRIPTION
+
 =head1 METHODS
+
+See L<MIDI::RtMidi::FFI::Device> for methods common to all device types.
 
 =head2 new
 
@@ -236,6 +244,16 @@ Decodes the passed MIDI byte string with L<MIDI::Stream::Decoder>.
 
 method decode_message( $msg ) {
     $decoder->decode( $msg );
+}
+
+method get_current_api {
+    rtmidi_in_get_current_api( $self->device );
+}
+
+method DESTROY {
+    $self->cancel_callback;
+    MIDI::RtMidi::FFI::_cleanup( $self->device );
+    rtmidi_in_free( $self->device );
 }
 
 1;

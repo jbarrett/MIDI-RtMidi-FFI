@@ -6,8 +6,20 @@ use experimental qw/ signatures /;
 class
     MIDI::RtMidi::FFI::AbstractDevice;
 
+# ABSTRACT: Base class for MIDI::RtMidi::FFI input and output devices
+
 use MIDI::RtMidi::FFI ':all';
+use Time::HiRes qw/ time /;
 use Carp qw/ confess carp /;
+
+=encoding UTF-8
+
+=head1 DESCRIPTION
+
+Base class for RtMidi input and output classes. See L<MIDI::RtMidi::FFI::Device>
+for methods common to all device types.
+
+=cut
 
 my $rtmidi_api_names = {
     unspecified => [ "Unknown",            RTMIDI_API_UNSPECIFIED ],
@@ -35,6 +47,9 @@ field $device :reader = __CLASS__->build_device( $api, $name );
 ADJUST {
     confess __CLASS__ . " may not be instantiated directly"
         if __CLASS__ eq __PACKAGE__;
+
+    __CLASS__->can('get_current_api')
+        or confess __CLASS__ . " cannot do get_current_api()";
 }
 
 method ok( $ok = undef ) { $device->ok( defined $ok ? $ok : () ) }
@@ -70,6 +85,68 @@ method open_port( $port_number, $open_port_name ) {
     }
 
     croak("Error opening port: " . $self->msg);
+}
+
+method open_port_by_name( $name, $open_port_name = 'in-' . time() ) {
+    my @ports = $self->get_ports_by_name( $name );
+    confess "No available device found matching supplied criteria" unless @ports;
+    $self->open_port( $ports[0], $open_port_name );
+}
+
+method get_ports_by_name( $name ) {
+    my @ports;
+    if ( ref $name eq 'ARRAY' ) {
+        for ( $name->@* ) {
+            push @ports, $self->get_ports_by_name( $_ );
+        }
+    }
+    else {
+        push @ports, grep {
+            my $pn = $self->get_port_name( $_ );
+            ref $name eq 'Regexp'
+                ? $pn =~ $name
+                : $pn eq $name
+        } 0..($self->get_port_count-1);
+    }
+    @ports;
+}
+
+method get_all_port_nums {
+    +{
+        map { $_ => $self->get_port_name( $_ ) }
+        0..$self->get_port_count-1
+    };
+}
+
+method get_all_port_names {
+    my ( $self ) = @_;
+    +{
+        reverse $self->get_all_port_nums->%*
+    }
+}
+
+method print_ports( $handle = *STDOUT ) {
+    my $ports = $self->get_all_port_nums;
+    for my $port_num ( sort { $a <=> $b } keys $ports->%* ) {
+        print $handle "$port_num: $ports->{ $port_num }\n";
+    }
+}
+
+method close_port {
+    $self->ok(1);
+    rtmidi_close_port( $self->device );
+    return 1 if $self->ok;
+    confess "Error closing port: " . $self->msg;
+}
+
+method get_port_count {
+    rtmidi_get_port_count( $self->device );
+}
+
+method get_port_name( $port_number ) {
+    my $name = rtmidi_get_port_name( $self->device, $port_number );
+    $name =~ s/\0$//;
+    return $name;
 }
 
 1;
