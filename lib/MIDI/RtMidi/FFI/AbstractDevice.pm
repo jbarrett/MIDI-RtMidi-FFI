@@ -149,4 +149,10 @@ method get_port_name( $port_number ) {
     return $name;
 }
 
+# Hit me across the nose with a rolled-up newspaper
+method isa( $class ) {
+    return !!1 if $class eq 'MIDI::RtMidi::FFI::Device';
+    UNIVERSAL::isa( $self, $class );
+}
+
 1;
