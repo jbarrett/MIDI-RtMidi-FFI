@@ -249,7 +249,8 @@ Decodes the passed MIDI byte string with L<MIDI::Stream::Decoder>.
 =cut
 
 method decode_message( $msg ) {
-    $decoder->decode( $msg );
+    return $decoder->fetch_one_event->as_arrayref if $decoder->decode( $msg );
+    undef;
 }
 
 method get_current_api {
