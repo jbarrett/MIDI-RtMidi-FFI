@@ -74,7 +74,7 @@ useful for passing your own decoder configurations.
 
 =head2 set_callback
 
-    $device->set_callback( sub( $ts, $msg ) {
+    $device->set_callback( sub( $dt, $msg ) {
         # handle $msg here
     } );
 
@@ -99,7 +99,7 @@ method set_callback( $cb ) {
 
 =head2 set_callback_decoded
 
-    $device->set_callback_decoded( sub( $ts, $msg, $event ) {
+    $device->set_callback_decoded( sub( $dt, $msg, $event ) {
         # handle $msg / $event here
     } );
 
@@ -110,11 +110,14 @@ message is also sent in case this fails.
 =cut
 
 method set_callback_decoded( $cb ) {
-    my $event_cb = sub( $ts, $msg ) {
-        my $decoded = $self->decode_message( $msg );
-        $cb->( $ts, $msg, $decoded );
-    };
-    $self->set_callback( $event_cb );
+    $decoder->cancel_callbacks( 'all' );
+    $decoder->attach_callback->(
+        all => sub( $dt, $event ) {
+            $cb->( $dt, $event->as_arrayref );
+            $decoder->continue;
+        }
+    );
+    $self->set_callback( sub( $dt, $msg ) { $decoder->decode( $msg ) } );
 }
 
 =head2 cancel_callback
@@ -232,9 +235,6 @@ method get_message_decoded {
 =head2 get_event
 
 Alias for L</get_message_decoded>, for backwards compatibility.
-
-B<NB> Previous versions of this call spliced out the channel portion of the
-message. This is no longer the case.
 
 =cut
 
