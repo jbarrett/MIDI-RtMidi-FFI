@@ -15,7 +15,7 @@ field $ignore_sysex   :param = 1;
 field $ignore_timing  :param = 1;
 field $ignore_sensing :param = 1;
 
-field $decoder = MIDI::Stream::Decoder->new;
+field $decoder :param = MIDI::Stream::Decoder->new;
 
 field $callback;
 
@@ -61,6 +61,12 @@ Ignore incoming timing messages (defaults to true)
 
 B<ignore_sensing> -
 Ignore incoming active sensing messages (defaults to true)
+
+=item *
+
+B<decoder> -
+An optional MIDI Event decoder with the same interface as L<MIDI::Stream::Decoder> -
+useful for passing your own decoder configurations.
 
 =back
 
