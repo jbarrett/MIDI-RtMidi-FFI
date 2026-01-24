@@ -14,14 +14,11 @@ my ( $in, $out ) = ( newdevice( 'in' ), newdevice() );
 isa_ok( $_, 'MIDI::RtMidi::FFI::AbstractDevice' ) for ( $in, $out );
 
 my @msgs = ( "\x90\x40\x5A", "\x80\x40\x5A" );
-$in->set_callback( sub {
-        my ( $timestamp, $msg, $data ) = @_;
-        is( $data, 'test data', 'callback data buffer handled' );
+$in->set_callback( sub( $ts, $msg ) {
         my $msghex = msg2hex( shift @msgs );
         my $inhex = msg2hex( $msg );
         is( $inhex, $msghex, 'callback message order' );
-    },
-    'test data'
+    }
 );
 
 subtest callback => sub {
