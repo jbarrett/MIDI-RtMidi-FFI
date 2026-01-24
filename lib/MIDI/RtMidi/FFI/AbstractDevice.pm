@@ -133,6 +133,7 @@ method print_ports( $handle = *STDOUT ) {
 }
 
 method close_port {
+    return unless $port_name;
     $self->ok(1);
     rtmidi_close_port( $self->device );
     return 1 if $self->ok;
