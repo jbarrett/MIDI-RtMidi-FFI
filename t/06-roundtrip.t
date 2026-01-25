@@ -4,8 +4,6 @@ use warnings;
 use Test2::V0;
 use Test::Lib;
 use MIDI::RtMidi::FFI::TestUtils;
-use Carp::Always;
-use Carp::REPL;
 
 use MIDI::RtMidi::FFI::Device;
 my ( $in, $out ) = ( newdevice( 'in' ), newdevice() );
@@ -37,7 +35,5 @@ sub round_trip {
 for my $msg ( @{ $msgs } ) {
     is round_trip( $msg ), $msg, "Round-trip decode OK for $msg->[0]";
 }
-
-undef $dev;
 
 done_testing;
