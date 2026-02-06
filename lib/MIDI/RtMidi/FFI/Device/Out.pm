@@ -50,11 +50,16 @@ Attempts to encode the passed message with L<MIDI::Stream::Encoder>.
 
 =cut
 
+my $_midi_event_name = method( $event ) {
+    $event->[0] = $self->name_from_midi_event( $event->[0] );
+    $event;
+};
+
 method encode_message( @event ) {
     if ( ref $event[0] eq 'ARRAY' ) {
         return join '', map { $self->encode_message( $_->@* ) } @event;
     }
-    $encoder->encode( \@event );
+    $encoder->encode( $self->$_midi_event_name( \@event ) );
 }
 
 =head2 send_message_encoded

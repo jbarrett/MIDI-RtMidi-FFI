@@ -117,7 +117,7 @@ method set_callback_decoded( $cb ) {
             $decoder->continue;
         }
     );
-    $self->set_callback( sub( $dt, $msg ) { $decoder->decode( $msg ) } );
+    $self->set_callback( sub( $dt, $msg ) { $self->decode_message( $msg ) } );
 }
 
 =head2 cancel_callback
@@ -248,9 +248,14 @@ Decodes the passed MIDI byte string with L<MIDI::Stream::Decoder>.
 
 =cut
 
+my $_midi_event_name = method( $event ) {
+    $event->[0] = $self->name_to_midi_event( $event->[0] );
+    $event;
+};
+
 method decode_message( $msg ) {
-    return $decoder->fetch_one_event->as_arrayref if $decoder->decode( $msg );
-    undef;
+    return unless $decoder->decode( $msg );
+    $self->$_midi_event_name( $decoder->fetch_one_event->as_arrayref );
 }
 
 method get_current_api {
