@@ -10,7 +10,7 @@ class
 
 use MIDI::RtMidi::FFI ':all';
 use Time::HiRes qw/ time /;
-use Carp qw/ confess carp /;
+use Carp qw/ croak carp /;
 
 =encoding UTF-8
 
@@ -58,11 +58,11 @@ field $invert_midi_event_map = {
 field $device :reader = __CLASS__->build_device( $api, $name );
 
 ADJUST {
-    confess __CLASS__ . " may not be instantiated directly"
+    croak __CLASS__ . " may not be instantiated directly"
         if __CLASS__ eq __PACKAGE__;
 
     __CLASS__->can('get_current_api')
-        or confess __CLASS__ . " cannot do get_current_api()";
+        or croak __CLASS__ . " cannot do get_current_api()";
 }
 
 method ok( $ok = undef ) { $device->ok( defined $ok ? $ok : () ) }
@@ -71,7 +71,7 @@ method data { $device->data }
 method ptr  { $device->ptr }
 
 method open_virtual_port( $virtual_port_name ) {
-    confess "Virtual ports unsupported on this platform"
+    croak "Virtual ports unsupported on this platform"
         if $self->get_current_api == RTMIDI_API_WINDOWS_MM;
     $self->ok(1);
 
@@ -82,11 +82,11 @@ method open_virtual_port( $virtual_port_name ) {
         return 1;
     }
 
-    confess "Error opening virtual port: " . $self->msg;
+    croak "Error opening virtual port: " . $self->msg;
 }
 
 method open_port( $port_number, $open_port_name ) {
-    confess "Invalid port number ($port_number)"
+    croak "Invalid port number ($port_number)"
         if ( $port_number < 0 || $port_number >= $self->get_port_count );
     $self->ok(1);
 
@@ -102,7 +102,7 @@ method open_port( $port_number, $open_port_name ) {
 
 method open_port_by_name( $name, $open_port_name = 'in-' . time() ) {
     my @ports = $self->get_ports_by_name( $name );
-    confess "No available device found matching supplied criteria" unless @ports;
+    croak "No available device found matching supplied criteria" unless @ports;
     $self->open_port( $ports[0], $open_port_name );
 }
 
@@ -150,7 +150,7 @@ method close_port {
     $self->ok(1);
     rtmidi_close_port( $self->device );
     return 1 if $self->ok;
-    confess "Error closing port: " . $self->msg;
+    croak "Error closing port: " . $self->msg;
 }
 
 method get_port_count {

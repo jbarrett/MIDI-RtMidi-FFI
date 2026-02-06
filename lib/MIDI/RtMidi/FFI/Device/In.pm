@@ -9,7 +9,7 @@ class MIDI::RtMidi::FFI::Device::In :isa( MIDI::RtMidi::FFI::AbstractDevice );
 
 use MIDI::Stream::Decoder;
 use MIDI::RtMidi::FFI ':all';
-use Carp qw/ confess carp /;
+use Carp qw/ croak carp /;
 
 field $ignore_sysex   :param = 1;
 field $ignore_timing  :param = 1;
@@ -21,7 +21,7 @@ field $callback;
 
 sub build_device( $class, $api, $name ) {
     my $device = rtmidi_in_create( $api, $name, MIDI::RtMidi::FFI::BUFFER_SIZE );
-    confess "Error creating device" if !$device || !$device->ok;
+    croak "Error creating device" if !$device || !$device->ok;
     $device;
 }
 

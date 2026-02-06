@@ -53,7 +53,7 @@ documentation on methods specific to input and output devices respectively.
 =cut
 
 use MIDI::RtMidi::FFI ':all';
-use Carp qw/ carp confess /;
+use Carp qw/ carp croak /;
 
 our $VERSION = '0.00';
 
