@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 # Can I specify test count in Test2::V#?
-use Test::More tests => 15;
+use Test2::V0;
 use Time::HiRes qw/ usleep gettimeofday tv_interval /;
 
 use MIDI::RtMidi::FFI::Device;
@@ -32,6 +32,8 @@ my @tests = (
     [ song_position => 0x0000 ],
 );
 
+plan scalar @tests;
+
 sub test_name {
     my $name = shift;
     join '-', $name, map { sprintf "0x%x", $_ } @_;
@@ -47,5 +49,5 @@ while ( @tests ) {
     next unless my $event = $in->get_message_decoded;
     my $test = shift @tests;
     my $name = test_name( @{ $test } );
-    is_deeply( $event, $test, $name );
+    is( $event, $test, $name );
 }
