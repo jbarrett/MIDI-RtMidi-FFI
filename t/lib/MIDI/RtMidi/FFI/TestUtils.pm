@@ -5,7 +5,6 @@ use base qw/ Exporter /;
 
 use MIDI::RtMidi::FFI::Device;
 use MIDI::RtMidi::FFI ':all';
-use MIDI::Event;
 use Proc::Find qw/ proc_exists /;
 use Test2::V0;
 
