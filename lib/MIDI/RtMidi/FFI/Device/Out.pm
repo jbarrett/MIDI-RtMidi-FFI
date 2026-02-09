@@ -86,6 +86,61 @@ Alias for L</send_message_encoded>, for backwards compatibility.
 
 *send_event = \&send_message_encoded;
 
+=head2 rpn
+
+    $device->rpn( $channel, $rpn, $value );
+    $device->rpn( $channel, [ $rpn_msb, $rpn_lsb ], [ $value_msb, $value_lsb ] );
+    $device->rpn( $channel, [ $rpn_msb, $rpn_lsb ], [ $value_msb ] );
+    $device->rpn( 0xf, 0x0000, 0x1fff );
+
+Send a single Registered Paramater Number (RPN) value.
+
+This expects the parameter number and its value as 14-bit values,
+or you can pass an arrayref for either to speficy MSB and LSB
+separately.
+
+If your parameter expects only a MSB value (CC6 only), you may specify just
+the MSB in an arrayref, or shift the MSB by 7 bits. That is:
+
+    $device->rpn( $channel, $rpn, $value_msb << 7 );
+    $device->rpn( $channel, $rpn, [ $value_msb ] );
+
+...not:
+
+    $device->rpn( $channel, $rpn, $value_msb ); # wrong!
+
+=cut
+
+method rpn( $channel, $rpn, $value, $cc = [ 101, 100 ] ) {
+    my ( $rpn_msb, $rpn_lsb ) = ref $rpn eq 'ARRAY'
+        ? map { $_ // 0 } $rpn->@[0, 1]
+        : split_bytes( $rpn );
+
+    my ( $msb, $lsb ) = ref $value eq 'ARRAY'
+        ? $value->@*
+        : split_bytes( $value );
+
+    my @msg = ( $cc->[0], $rpn_msb, $cc->[1], $rpn_lsb, 6, $msb );
+    push @msg, ( 38, $lsb ) if defined $lsb;
+    push @msg, ( 101, 127, 100, 127 );
+    $self->cc( $channel, @msg );
+}
+
+=head2 nrpn
+
+    $device->nrpn( $channel, $nrpn, $value );
+    $device->nrpn( $channel, [ $nrpn_msb, $nrpn_lsb ], [ $value_msb, $value_lsb ] );
+    $device->nrpn( 0xf, 0x0000, 0x1fff );
+
+Send a single Non-Registered Paramater Number (NRPN) value.
+See L</rpn> for additional detail on parameters.
+
+=cut
+
+method nrpn( $channel, $nrpn, $value ) {
+    $self->rpn( $channel, $nrpn, $value, [ 99, 98 ] );
+}
+
 =head2 panic
 
     $device->panic( $channel );
