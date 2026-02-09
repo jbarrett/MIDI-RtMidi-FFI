@@ -15,7 +15,10 @@ field $ignore_sysex   :param = 1;
 field $ignore_timing  :param = 1;
 field $ignore_sensing :param = 1;
 
-field $decoder :param = MIDI::Stream::Decoder->new;
+field $enable_14bit :param = 0;
+field $decoder :param = MIDI::Stream::Decoder->new(
+    enable_14bit => $enable_14bit
+);
 
 field $callback;
 

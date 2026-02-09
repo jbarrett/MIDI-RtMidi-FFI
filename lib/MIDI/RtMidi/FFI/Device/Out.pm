@@ -3,15 +3,22 @@ use warnings;
 use Feature::Compat::Class;
 use experimental qw/ signatures /;
 
+package MIDI::RtMidi::FFI::Device::Out;
 class MIDI::RtMidi::FFI::Device::Out :isa( MIDI::RtMidi::FFI::AbstractDevice );
 
 # ABSTRACT: OO interface for MIDI::RtMidi::FFI output deviced
 
 use MIDI::Stream::Encoder;
+use MIDI::Stream::Tables qw/ split_bytes /;
 use MIDI::RtMidi::FFI ':all';
 use Carp qw/ croak carp /;
 
-field $encoder = MIDI::Stream::Encoder->new;
+field $enable_14bit :param = 0;
+field $enable_running_status :param = 0;
+field $encoder = MIDI::Stream::Encoder->new(
+    enable_14bit => $enable_14bit,
+    enable_running_status => $enable_running_status,
+);
 
 sub build_device( $class, $api, $name ) {
     my $device = rtmidi_out_create( $api, $name );
