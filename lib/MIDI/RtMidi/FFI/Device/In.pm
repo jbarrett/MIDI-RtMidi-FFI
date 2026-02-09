@@ -3,6 +3,7 @@ use warnings;
 use Feature::Compat::Class;
 use experimental qw/ signatures /;
 
+package MIDI::RtMidi::FFI::Device::In;
 class MIDI::RtMidi::FFI::Device::In :isa( MIDI::RtMidi::FFI::AbstractDevice );
 
 # ABSTRACT: OO interface for MIDI::RtMidi::FFI input devices
@@ -251,14 +252,14 @@ Decodes the passed MIDI byte string with L<MIDI::Stream::Decoder>.
 
 =cut
 
-my $_midi_event_name = method( $event ) {
+my $_munge_midi_event_name = method( $event ) {
     $event->[0] = $self->name_to_midi_event( $event->[0] );
     $event;
 };
 
 method decode_message( $msg ) {
     return unless $decoder->decode( $msg );
-    $self->$_midi_event_name( $decoder->fetch_one_event->as_arrayref );
+    $self->$_munge_midi_event_name( $decoder->fetch_one_event->as_arrayref );
 }
 
 method get_current_api {

@@ -57,7 +57,7 @@ Attempts to encode the passed message with L<MIDI::Stream::Encoder>.
 
 =cut
 
-my $_midi_event_name = method( $event ) {
+my $_munge_midi_event_name = method( $event ) {
     $event->[0] = $self->name_from_midi_event( $event->[0] );
     $event;
 };
@@ -66,7 +66,7 @@ method encode_message( @event ) {
     if ( ref $event[0] eq 'ARRAY' ) {
         return join '', map { $self->encode_message( $_->@* ) } @event;
     }
-    $encoder->encode( $self->$_midi_event_name( \@event ) );
+    $encoder->encode( $self->$_munge_midi_event_name( \@event ) );
 }
 
 =head2 send_message_encoded
@@ -87,7 +87,7 @@ method send_message_encoded( @event ) {
 
 =head2 send_event
 
-Alias for L</send_message_encoded>, for backwards compatibility.
+Alias for L</send_message_encoded>.
 
 =cut
 
@@ -194,7 +194,7 @@ method get_current_api {
     rtmidi_out_get_current_api( $self->device );
 }
 
-=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex_f0, sysex_f7, sysex, clock, start, stop, continue
+=head2 note_off, note_on, control_change, patch_change, key_after_touch, channel_after_touch, pitch_wheel_change, sysex, clock, start, stop, continue
 
 Wrapper methods for L</send_message_encoded>, e.g.
 
@@ -213,8 +213,6 @@ method patch_change { $self->send_event( patch_change => @_ ) };
 method key_after_touch { $self->send_event( key_after_touch => @_ ) };
 method channel_after_touch { $self->send_event( channel_after_touch => @_ ) };
 method pitch_wheel_change { $self->send_event( pitch_wheel_change => @_ ) };
-method sysex_f0 { $self->send_event( sysex_f0 => @_ ) };
-method sysex_f7 { $self->send_event( sysex_f7 => @_ ) };
 method sysex { $self->send_event( sysex => @_ ) };
 method clock { $self->send_event( clock => @_ ) };
 method start { $self->send_event( start => @_ ) };
