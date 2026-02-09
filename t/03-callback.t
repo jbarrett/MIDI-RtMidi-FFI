@@ -1,12 +1,12 @@
 use strict;
 use warnings;
-use experimental qw/ signatures /;
 
 use Test2::V0;
 use Test::Lib;
 use Time::HiRes qw/ usleep /;
 
 use MIDI::RtMidi::FFI::TestUtils;
+use experimental qw/ signatures /;
 
 plan skip_all => "Sanity check failed" unless sanity_check;
 
