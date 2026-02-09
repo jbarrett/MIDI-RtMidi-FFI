@@ -3,8 +3,9 @@ use warnings;
 use Feature::Compat::Class;
 use experimental qw/ signatures /;
 
-class
+package
     MIDI::RtMidi::FFI::AbstractDevice;
+class MIDI::RtMidi::FFI::AbstractDevice;
 
 # ABSTRACT: Base class for MIDI::RtMidi::FFI input and output devices
 
@@ -132,7 +133,6 @@ method get_all_port_nums {
 }
 
 method get_all_port_names {
-    my ( $self ) = @_;
     +{
         reverse $self->get_all_port_nums->%*
     }
@@ -161,6 +161,10 @@ method get_port_name( $port_number ) {
     my $name = rtmidi_get_port_name( $self->device, $port_number );
     $name =~ s/\0$//;
     return $name;
+}
+
+method get_compiled_api {
+    rtmidi_get_compiled_api( $self->device );
 }
 
 # Hit me across the nose with a rolled-up newspaper

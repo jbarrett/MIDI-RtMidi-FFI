@@ -107,7 +107,10 @@ sub new {
     my %args = ( @_ == 1 and ref $_[0] eq 'HASH' )
         ? $_[0]->%*
         : @_;
-    warn "14 bit modes are no longer supported" if delete $args{ '14bit_mode' };
+    if ( delete $args{ '14bit_mode' } ) {
+        warn "14 bit modes are no longer supported";
+        $args{enable_14bit} //= 1;
+    }
     delete $args{ type } eq 'in'
         ? RtMidiIn->new( %args )
         : RtMidiOut->new( %args );
