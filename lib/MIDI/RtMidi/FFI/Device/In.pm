@@ -21,10 +21,13 @@ field $decoder :param = MIDI::Stream::Decoder->new(
     enable_14bit => $enable_14bit
 );
 
+field $queue_size_limit :param = MIDI::RtMidi::FFI::BUFFER_SIZE;
+field $bufsize :param = $queue_size_limit;
+
 field $callback;
 
-sub build_device( $class, $api, $name ) {
-    my $device = rtmidi_in_create( $api, $name, MIDI::RtMidi::FFI::BUFFER_SIZE );
+method build_device( $api, $name ) {
+    my $device = rtmidi_in_create( $api, $name, $bufsize );
     croak "Error creating device" if !$device || !$device->ok;
     $device;
 }

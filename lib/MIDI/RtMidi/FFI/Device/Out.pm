@@ -20,7 +20,7 @@ field $encoder = MIDI::Stream::Encoder->new(
     enable_running_status => $enable_running_status,
 );
 
-sub build_device( $class, $api, $name ) {
+method build_device( $api, $name ) {
     my $device = rtmidi_out_create( $api, $name );
     croak "Error creating device" if !$device || !$device->ok;
     $device;

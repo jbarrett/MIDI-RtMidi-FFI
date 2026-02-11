@@ -56,7 +56,7 @@ field $invert_midi_event_map = {
     reverse $midi_event_map->%*
 };
 
-field $device :reader = __CLASS__->build_device( $api, $name );
+field $device :reader;
 
 ADJUST {
     croak __CLASS__ . " may not be instantiated directly"
@@ -64,6 +64,8 @@ ADJUST {
 
     __CLASS__->can('get_current_api')
         or croak __CLASS__ . " cannot do get_current_api()";
+
+    $device = $self->build_device( $api, $name );
 }
 
 method ok( $ok = undef ) { $device->ok( defined $ok ? $ok : () ) }
