@@ -113,8 +113,8 @@ message is also sent in case this fails.
 method set_callback_decoded( $cb ) {
     $decoder->cancel_callbacks( 'all' );
     $decoder->attach_callback->(
-        all => sub( $dt, $event ) {
-            $cb->( $dt, $event->as_arrayref );
+        all => sub( $event ) {
+            $cb->( $event->dt, $event->as_arrayref );
             $decoder->continue;
         }
     );
