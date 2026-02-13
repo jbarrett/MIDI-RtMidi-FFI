@@ -64,7 +64,7 @@ my @tests = (
                  [ 0x0f, 0x64, 0x7f ] ],
     },
 
-    # Same again, nbut "nerpins":
+    # Same again, but "nerpins":
     # https://www.philrees.co.uk/nrpnq.htm
     {
         name => "All 14 bit NRPN",

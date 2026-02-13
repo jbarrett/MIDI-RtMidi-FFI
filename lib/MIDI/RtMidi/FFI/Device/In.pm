@@ -137,12 +137,17 @@ method cancel_callback {
 
 =head2
 
-    my $fh = $device->get_fh;
-    # ...then add a notifier to your event loop
+    # Future::AsyncAwait style ...
+    my $fh = $midi_in->get_fh;
+    my $size = $midi_in->bufsize;
+    while ( my $bytes = await Future::IO->read( $fh, $size ) ) {
+        my $event = $midi_in->decode( $bytes );
+        # Handle $event here
+    }
 
-This uses the rtmidi callback mechanism to write MIDI bytes to a pipe as
-the arrive. This method returns the other end of the pipe as a nonblocking
-L<IO::Handle> instance. This can then be added 
+This uses the rtmidi callback mechanism to write MIDI bytes to a pipe as the
+arrive. This method returns the other end of the pipe as a nonblocking
+L<IO::Handle> instance, which can be handed to the event loop of your choice.
 
 B<NB> This receives raw MIDI bytes, not decoded events with timestamps.
 This cannot be used in conjunction with L</set_callback> or 
@@ -243,7 +248,7 @@ Alias for L</get_message_decoded>.
 
 =head2 decode_message
 
-    my @events = $device->decode_message( $msg );
+    my $event = $device->decode_message( $msg );
 
 Decodes the passed MIDI byte string with L<MIDI::Stream::Decoder>.
 
@@ -258,6 +263,14 @@ method decode_message( $msg ) {
     return unless $decoder->decode( $msg );
     $self->$_munge_midi_event_name( $decoder->fetch_one_event->as_arrayref );
 }
+
+=head2 decode
+
+Alias for L</decode_message>
+
+=cut
+
+method decode( $msg ) { $self->decode_message( $msg ) }
 
 method get_current_api {
     rtmidi_in_get_current_api( $self->device );
