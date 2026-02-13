@@ -22,7 +22,7 @@ field $decoder :param = MIDI::Stream::Decoder->new(
 );
 
 field $queue_size_limit :param = MIDI::RtMidi::FFI::BUFFER_SIZE;
-field $bufsize :param = $queue_size_limit;
+field $bufsize :param :reader = $queue_size_limit;
 
 field $callback;
 
