@@ -16,9 +16,9 @@ field $ignore_sysex   :param = 1;
 field $ignore_timing  :param = 1;
 field $ignore_sensing :param = 1;
 
-field $enable_14bit :param = 0;
+field $enable_14bit_cc :param = 0;
 field $decoder :param = MIDI::Stream::Decoder->new(
-    enable_14bit => $enable_14bit
+    enable_14bit_cc => $enable_14bit_cc
 );
 
 field $queue_size_limit :param = MIDI::RtMidi::FFI::BUFFER_SIZE;
@@ -68,12 +68,6 @@ Ignore incoming timing messages (defaults to true)
 
 B<ignore_sensing> -
 Ignore incoming active sensing messages (defaults to true)
-
-=item *
-
-B<decoder> -
-An optional MIDI Event decoder with the same interface as L<MIDI::Stream::Decoder> -
-useful for passing your own decoder configurations.
 
 =back
 
@@ -241,7 +235,7 @@ method get_message_decoded {
 
 =head2 get_event
 
-Alias for L</get_message_decoded>, for backwards compatibility.
+Alias for L</get_message_decoded>.
 
 =cut
 

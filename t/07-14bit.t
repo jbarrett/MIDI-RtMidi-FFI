@@ -12,8 +12,8 @@ use MIDI::RtMidi::FFI::TestUtils;
 plan skip_all => "Sanity check failed" unless sanity_check;
 plan skip_all => 'Cannot open virtual ports on this platform' if no_virtual;
 
-my $in = RtMidiIn->new( enable_14bit => 1 );
-my $out = RtMidiOut->new( enable_14bit => 1 );
+my $in = RtMidiIn->new( enable_14bit_cc => 1 );
+my $out = RtMidiOut->new( enable_14bit_cc => 1 );
 connect_devices( $in, $out );
 
 my @tests = (

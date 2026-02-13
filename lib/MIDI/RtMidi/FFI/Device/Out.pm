@@ -13,10 +13,10 @@ use MIDI::Stream::Tables qw/ split_bytes /;
 use MIDI::RtMidi::FFI ':all';
 use Carp qw/ croak carp /;
 
-field $enable_14bit :param = 0;
+field $enable_14bit_cc :param = 0;
 field $enable_running_status :param = 0;
 field $encoder = MIDI::Stream::Encoder->new(
-    enable_14bit => $enable_14bit,
+    enable_14bit_cc => $enable_14bit_cc,
     enable_running_status => $enable_running_status,
 );
 

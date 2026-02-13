@@ -109,7 +109,7 @@ sub new {
         : @_;
     if ( delete $args{ '14bit_mode' } ) {
         warn "14 bit modes are no longer supported";
-        $args{enable_14bit} //= 1;
+        $args{enable_14bit_cc} //= 1;
     }
     delete $args{ type } eq 'in'
         ? RtMidiIn->new( %args )
