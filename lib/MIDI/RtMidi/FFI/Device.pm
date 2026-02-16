@@ -69,33 +69,29 @@ Returns a new MIDI::RtMidi::FFI::Device object. RtMidiIn and RtMidiOut are
 provided as shorthand to instantiate L<MIDI::RtMidi::FFI::Device::In> and
 L<MIDI::RtMidi::FFI::Device::Out> respectively. Valid attributes:
 
-=over 4
+=over
 
-=item *
+=head3 type
 
-B<type> -
 Device type : 'in' or 'out' (defaults to 'out')
 
 This option is invalid if directly instantiating RtMidiIn, RtMidiOut,
 L<MIDI::RtMidi::FFI::Device::In>, or L<MIDI::RtMidi::FFI::Device::Out>.
 
-=item *
+=head3 name
 
-B<name> -
 Device / Client name
 
-=item *
+=head3 api
 
-B<api> -
 MIDI API to use. This should be a L<RtMidiApi constant|MIDI::RtMidi::FFI/"RtMidiApi">.
 By default the device should use the first compiled API available. See search
 order notes in
 L<Using Simultaneous Multiple APIs|https://caml.music.mcgill.ca/~gary/rtmidi/index.html#multi>
 on the RtMidi website.
 
-=item *
+=head3 api_name
 
-B<api_name> -
 MIDI API to use by name. One of 'alsa', 'jack', 'core', 'winmm' or 'dummy'.
 
 =back

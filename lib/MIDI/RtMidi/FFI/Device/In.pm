@@ -52,26 +52,40 @@ Construct new instance.
 
     my $midiin = MIDI::RtMidi::FFI::Device::In->new( %options );
 
-=over 4
+=over
 
-=item *
+=head3 ignore_sysex
 
-B<ignore_sysex> -
-Ignore incoming SysEx messages (defaults to true)
+Ignore incoming SysEx messages. Default: true
 
-=item *
+=head3 ignore_timing
 
-B<ignore_timing> -
-Ignore incoming timing messages (defaults to true)
+Ignore incoming timing messages. Default: true
 
-=item *
+=head3 ignore_sensing
 
-B<ignore_sensing> -
-Ignore incoming active sensing messages (defaults to true)
+Ignore incoming active sensing messages. Default: true
+
+=head3 enable_14bit_cc
+
+Enable decoding of MSB/LSB pairs for lower 32 CCs to 14-bit values. Default:
+false
+
+=head3 queue_size_limit
+
+Buffer size for incoming messages. Default: 4096 bytes
+
+=head3 bufsize
+
+An alias for queue_size_limit.
 
 =back
 
 =cut
+
+=head2 bufsize
+
+Read-only accessor for bufsize/queue_size_limit parameter.
 
 =head2 set_callback
 
