@@ -128,7 +128,7 @@ method set_callback_decoded( $cb ) {
     $decoder->cancel_callbacks( 'all' );
     $decoder->attach_callback->(
         all => sub( $event ) {
-            $cb->( $event->dt, $event->as_arrayref );
+            $cb->( $event->dt, $event->bytes, $event->as_arrayref );
             $decoder->continue;
         }
     );
