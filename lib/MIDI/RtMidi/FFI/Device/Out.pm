@@ -223,9 +223,29 @@ method continue { $self->send_event( continue => @_ ) };
 
 An alias for control_change.
 
+=head2 program_change
+
+An alias for patch_change.
+
+=head2 aftertouch
+
+An alias for channel_after_touch.
+
+=head2 polytouch
+
+An alias for key_after_touch.
+
+=head2 pitch_bend
+
+An alias for pitch_wheel_change.
+
 =cut
 
 *cc = \&control_change;
+*program_change = \&patch_change;
+*aftertouch = \&channel_after_touch;
+*polytouch = \&key_after_touch;
+*pitch_bend = \&pitch_wheel_change;
 
 method DESTROY {
     $self->close_port;

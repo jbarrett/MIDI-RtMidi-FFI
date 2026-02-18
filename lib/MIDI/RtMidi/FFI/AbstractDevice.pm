@@ -43,7 +43,6 @@ field $api_name :param = 'unspecified';
 field $api :param = $api_by_name->( $api_name )->[1];
 field $port_name :reader;
 
-field $remap_event_names :param = 1;
 field $midi_event_map :param = {
     key_after_touch     => 'polytouch',
     patch_change        => 'program_change',
@@ -176,12 +175,10 @@ method isa( $class ) {
 }
 
 method name_from_midi_event( $name ) {
-    return $name unless $remap_event_names;
     $midi_event_map->{ $name } // $name;
 }
 
 method name_to_midi_event( $name ) {
-    return $name unless $remap_event_names;
     $invert_midi_event_map->{ $name } // $name;
 }
 

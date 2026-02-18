@@ -24,6 +24,8 @@ field $decoder :param = MIDI::Stream::Decoder->new(
 field $queue_size_limit :param = MIDI::RtMidi::FFI::BUFFER_SIZE;
 field $bufsize :param :reader = $queue_size_limit;
 
+field $remap_event_names :param = 1;
+
 field $callback;
 
 method build_device( $api, $name ) {
@@ -78,6 +80,14 @@ Buffer size for incoming messages. Default: 4096 bytes
 =head3 bufsize
 
 An alias for queue_size_limit.
+
+=head3 remap_event_names
+
+If true, decoded incoming events will use L<MIDI::Event/EVENTS|MIDI::Event
+names> for backwards compatibility. If false, L<MIDI::Stream/Events and
+Parameters|MIDI::Stream event names> will be used.
+
+Default: true.
 
 =back
 
@@ -269,6 +279,7 @@ Decodes the passed MIDI byte string with L<MIDI::Stream::Decoder>.
 =cut
 
 my $_munge_midi_event_name = method( $event ) {
+    return $event unless $remap_event_names;
     $event->[0] = $self->name_to_midi_event( $event->[0] );
     $event;
 };

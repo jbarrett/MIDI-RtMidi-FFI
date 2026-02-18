@@ -130,7 +130,6 @@ this.
 This method will not work on Windows. See L</Virtual Devices and Windows>
 for details and possible workarounds.
 
-
 =head2 open_port
 
     $device->open_port( $port, $name );
