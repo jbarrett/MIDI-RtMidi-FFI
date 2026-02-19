@@ -7,6 +7,8 @@ package
     MIDI::RtMidi::FFI::AbstractDevice;
 class MIDI::RtMidi::FFI::AbstractDevice;
 
+our $VERSION = '0.00';
+
 # ABSTRACT: Base class for MIDI::RtMidi::FFI input and output devices
 
 use MIDI::RtMidi::FFI ':all';

@@ -6,6 +6,8 @@ use experimental qw/ signatures /;
 package MIDI::RtMidi::FFI::Device::Out;
 class MIDI::RtMidi::FFI::Device::Out :isa( MIDI::RtMidi::FFI::AbstractDevice );
 
+our $VERSION = '0.00';
+
 # ABSTRACT: OO interface for MIDI::RtMidi::FFI output deviced
 
 use MIDI::Stream::Encoder;
