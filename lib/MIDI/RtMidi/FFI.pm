@@ -267,6 +267,7 @@ WINDOWS:
 
 sub _cleanup {
     my ( $dev ) = @_;
+    return unless $dev;
     if ( $retain->{ $dev }->{ cb_writer } ) {
         $retain->{ $dev }->{ cb_writer }->close;
         delete $retain->{ $dev }->{ cb_writer };
