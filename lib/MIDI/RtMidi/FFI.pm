@@ -257,7 +257,9 @@ sub callback_fh {
 WINDOWS:
 
     my ( $rd, $wr ) = IO::Socket->socketpair( AF_UNIX, SOCK_STREAM, PF_UNSPEC );
-    callback_fd( $dev, $wr->fileno );
+    if ( callback_fd( $dev, $wr->fileno ) < 0 ) {
+        croak("Error creating Win32 socket pair");
+    }
     $rd->blocking(0);
     $retain->{ $dev }->{ cb_writer } = $wr;
     return $rd;
