@@ -46,13 +46,16 @@ ADJUST {
 
 =head1 METHODS
 
-See L<MIDI::RtMidi::FFI::Device> for methods common to all device types.
+See L<MIDI::RtMidi::FFI::Device> for documentation methods common to all
+device types.
 
 =head2 new
 
 Construct new instance.
 
     my $midiin = MIDI::RtMidi::FFI::Device::In->new( %options );
+
+See global device options in L<MIDI::RtMidi::FFI::Device/new>.
 
 =over
 
@@ -110,7 +113,7 @@ event in seconds, alongside the MIDI message.
 B<NB> As a callback may occur at any point in your program's flow, the program
 should probably not be doing much when it occurs. That is, programs handling
 RtMidi callbacks should be asleep the callback is triggered. See L</get_fh>
-for integrating rtmidi into evnet loops.
+for an approach to integrating rtmidi into event loops.
 
 See the examples included with this dist for some ideas on how to incorporate
 callbacks into your program.
@@ -129,8 +132,11 @@ method set_callback( $cb ) {
     } );
 
 Same as L</set_callback>, though also attempts to decode the message, and pass
-that to the callback as an array ref. The original
-message is also sent in case this fails.
+that to the callback as an array ref. The original message is also sent in
+case this fails.
+
+See L</remap_event_names> - a constructor option which sets event names for
+incoming events.
 
 =cut
 
@@ -159,7 +165,7 @@ method cancel_callback {
     rtmidi_in_cancel_callback( $self->device );
 }
 
-=head2
+=head2 get_fh
 
     # Future::AsyncAwait style ...
     my $fh = $midi_in->get_fh;

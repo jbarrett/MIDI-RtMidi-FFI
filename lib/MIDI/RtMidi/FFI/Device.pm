@@ -84,17 +84,25 @@ Device / Client name
 
 =head3 api
 
-MIDI API to use. This should be a L<RtMidiApi constant|MIDI::RtMidi::FFI/"RtMidiApi">.
-By default the device should use the first compiled API available. See search
-order notes in
-L<Using Simultaneous Multiple APIs|https://caml.music.mcgill.ca/~gary/rtmidi/index.html#multi>
-on the RtMidi website.
+MIDI API to use. This should be a L<RtMidiApi
+constant|MIDI::RtMidi::FFI/"RtMidiApi">.  By default the device should use the
+first compiled API available. See search order notes in L<Using Simultaneous
+Multiple APIs|https://caml.music.mcgill.ca/~gary/rtmidi/index.html#multi> on
+the RtMidi website.
 
 =head3 api_name
 
 MIDI API to use by name. One of 'alsa', 'jack', 'core', 'winmm' or 'dummy'.
 
 =back
+
+=head2 name
+
+Device name read-only acessor.
+
+=head2 port_name
+
+Port name read-only acessor.
 
 =cut
 
@@ -199,6 +207,12 @@ Returns the MIDI API in use for the device.
 
 This is a L<RtMidiApi constant|MIDI::RtMidi::FFI/"RtMidiApi">.
 
+=head2 get_compiled_api
+
+    $device->get_current_api();
+
+Returns a list of available L<RtMidiApi constant|MIDI::RtMidi::FFI/MIDI APIs>.
+
 =cut
 
 {
@@ -250,9 +264,9 @@ device support on that platform.
 
 =head2 Port
 
-Every MIDI device has at least one port for Input and/or Output.
-In hardware, connections between ports are usually 1:1. Some software
-implementations allow for multiple connections to a port.
+Every MIDI device has at least one port for Input and/or Output.  In hardware,
+connections between ports are usually 1:1, though MIDI merging devices exist.
+Some software implementations allow for multiple connections to a port.
 
 There is a special Output port usually called "MIDI Thru" or
 "MIDI Through" which mirrors every message sent to a given Input port.
@@ -265,12 +279,14 @@ to specifically configured instruments, modules or effects.
 Channel must be specified in any message related to performance, such as
 "note on" or "control change".
 
+System common and realtime messages do not have a channel.
+
 =head2 Messages and Events
 
 A MIDI message is a (usually) short series of bytes sent on a port, instructing
 an instrument on how to behave - which notes to play, when, how loudly, with which
 timbral variations & expression, and so on. They may also contain configuration
-info or some other sort of instruction.
+info, clock and transport signals, or some other sort of instruction.
 
 In this module "events" usually refer to incoming message bytes decoded into a
 descriptive sequence of values, or a mechanism for turning these descriptive

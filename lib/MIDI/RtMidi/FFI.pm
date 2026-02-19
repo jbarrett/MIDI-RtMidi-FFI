@@ -281,18 +281,19 @@ __END__
 =head1 SYNOPSIS
 
     use MIDI::RtMidi::FFI ':all';
-    use MIDI::Event;
-    
+    use MIDI::Stream::Encoder;
+
     my $device = rtmidi_out_create( RTMIDI_API_UNIX_JACK, 'perl-jack' );
+    my $encoder = MIDI::Stream::Encoder->new;
     my $port_count = rtmidi_get_port_count( $device );
     my $synth_port = grep {
         rtmidi_get_port_name( $device, $_ ) =~ /synth/i
     } 0..($port_count-1);
-    
+
     rtmidi_open_port( $device, $synth_port, 'my synth' );
     rtmidi_out_send_message(
         $device,
-        ${ MIDI::Event::encode([[ note_on => 0, 0, 0x40, 0x5a ]], { never_add_eot => 1 }) }
+        $encoder->encode( [ note_on => 0, 0x40, 0x5a ] )
     );
 
 =head1 DESCRIPTION

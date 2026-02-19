@@ -34,7 +34,30 @@ method build_device( $api, $name ) {
 
 =head1 METHODS
 
-See L<MIDI::RtMidi::FFI::Device> for methods common to all device types.
+See L<MIDI::RtMidi::FFI::Device> for documentation methods common to all
+device types.
+
+=head2 new
+
+Construct new instance.
+
+    my $midiin = MIDI::RtMidi::FFI::Device::In->new( %options );
+
+See global device options in L<MIDI::RtMidi::FFI::Device/new>.
+
+=over
+
+=head3 enable_14bit_cc
+
+Enable encoding of 14-bit values to MSB/LSB pairs for lower 32 CCs. Default:
+false
+
+=head3 enable_running_status
+
+Enable running-status in encoded messages - status is not retransmitted for
+consecutive messages with the same status, after the first message in the set.
+
+=back
 
 =head2 send_message
 
@@ -69,6 +92,14 @@ method encode_message( @event ) {
     $encoder->encode( $self->$_munge_midi_event_name( \@event ) );
 }
 
+=head2 encode
+
+Alias for L</encode_message>.
+
+=cut
+
+method encode( @event ) { $self->encode_message( @event ) }
+
 =head2 send_message_encoded
 
     $device->send_message_encoded( @event );
@@ -77,7 +108,9 @@ method encode_message( @event ) {
     $device->send_message_encoded( control_change => 0x01, 0x1F, 0x3F7F );
     $device->send_message_encoded( sysex => "Hello, computer?" );
 
-Sends an event to the open port.
+Sends an event to the open port. Event names may be
+L<MIDI::Event/EVENTS|MIDI::Event names> or L<MIDI::Stream/Events and
+Parameters|MIDI::Stream event names>.
 
 =cut
 
