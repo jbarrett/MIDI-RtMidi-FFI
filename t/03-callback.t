@@ -44,7 +44,7 @@ subtest midi_event_callback => sub {
     plan scalar @events;
 
     $out->send_message( $msg );
-    usleep( 10_000 );
+    usleep( 50_000 );
 };
 
 subtest midi_stream_callback => sub {
@@ -60,7 +60,7 @@ subtest midi_stream_callback => sub {
     plan scalar @events;
 
     $out->send_message( $msg );
-    usleep( 10_000 );
+    usleep( 50_000 );
 };
 
 done_testing;
