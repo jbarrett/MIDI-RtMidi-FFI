@@ -164,9 +164,11 @@ method cancel_callback {
     # Future::AsyncAwait style ...
     my $fh = $midi_in->get_fh;
     my $size = $midi_in->bufsize;
+    my $decoder = MIDI::Stream::Decoder->new(
+        callback => sub( $event ) { # Handle $event here }
+    );
     while ( my $bytes = await Future::IO->read( $fh, $size ) ) {
-        my $event = $midi_in->decode( $bytes );
-        # Handle $event here
+        $decoder->decode( $bytes );
     }
 
 This uses the rtmidi callback mechanism to write MIDI bytes to a pipe as the
