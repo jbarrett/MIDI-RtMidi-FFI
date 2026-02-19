@@ -69,8 +69,6 @@ Returns a new MIDI::RtMidi::FFI::Device object. RtMidiIn and RtMidiOut are
 provided as shorthand to instantiate L<MIDI::RtMidi::FFI::Device::In> and
 L<MIDI::RtMidi::FFI::Device::Out> respectively. Valid attributes:
 
-=over
-
 =head3 type
 
 Device type : 'in' or 'out' (defaults to 'out')
@@ -93,8 +91,6 @@ the RtMidi website.
 =head3 api_name
 
 MIDI API to use by name. One of 'alsa', 'jack', 'core', 'winmm' or 'dummy'.
-
-=back
 
 =head2 name
 

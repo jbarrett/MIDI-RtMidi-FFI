@@ -47,8 +47,6 @@ Construct new instance.
 
 See global device options in L<MIDI::RtMidi::FFI::Device/new>.
 
-=over
-
 =head3 enable_14bit_cc
 
 Enable encoding of 14-bit values to MSB/LSB pairs for lower 32 CCs. Default:
@@ -58,8 +56,6 @@ false
 
 Enable running-status in encoded messages - status is not retransmitted for
 consecutive messages with the same status, after the first message in the set.
-
-=back
 
 =head2 send_message
 
@@ -111,8 +107,8 @@ method encode( @event ) { $self->encode_message( @event ) }
     $device->send_message_encoded( sysex => "Hello, computer?" );
 
 Sends an event to the open port. Event names may be
-L<MIDI::Event/EVENTS|MIDI::Event names> or L<MIDI::Stream/Events and
-Parameters|MIDI::Stream event names>.
+L<MIDI::Event names|MIDI::Event/EVENTS> or
+L<MIDI::Stream event names|MIDI::Stream/Events and Parameters>.
 
 =cut
 

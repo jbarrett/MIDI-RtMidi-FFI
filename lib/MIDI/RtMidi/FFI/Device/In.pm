@@ -59,8 +59,6 @@ Construct new instance.
 
 See global device options in L<MIDI::RtMidi::FFI::Device/new>.
 
-=over
-
 =head3 ignore_sysex
 
 Ignore incoming SysEx messages. Default: true
@@ -88,13 +86,12 @@ An alias for queue_size_limit.
 
 =head3 remap_event_names
 
-If true, decoded incoming events will use L<MIDI::Event/EVENTS|MIDI::Event
-names> for backwards compatibility. If false, L<MIDI::Stream/Events and
-Parameters|MIDI::Stream event names> will be used.
+If true, decoded incoming events will use
+L<MIDI::Event namesMIDI::Event/EVENTS>
+for backwards compatibility. If false,
+L<MIDI::Stream event names|MIDI::Stream/Events> will be used.
 
 Default: true.
-
-=back
 
 =cut
 
