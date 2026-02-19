@@ -1,4 +1,4 @@
-use strict;
+use v5.26;
 use warnings;
 package MIDI::RtMidi::FFI;
 use base qw/ Exporter /;
@@ -169,6 +169,7 @@ BEGIN {
 
 use constant $enum_RtMidiApi;
 use constant $enum_RtMidiErrorType;
+use constant { BUFFER_SIZE => 4096 };
 
 sub _sorted_enum_keys {
     my ( $enum ) = @_;
@@ -186,15 +187,16 @@ sub _exports {
 }
 
 sub _get_compiled_api {
-    my ( $sub, $get ) = @_;
+    my ( $sub ) = @_;
+    state $api_arr;
+    return $api_arr if $api_arr;
     my $num_apis = $sub->();
     return unless $num_apis;
-    return $num_apis unless $get;
     my $apis = malloc RTMIDI_API_NUM * $ffi->sizeof('enum');
     $sub->( $apis, RTMIDI_API_NUM );
-    my $api_arr = $ffi->cast( 'opaque' => "enum[$num_apis]", $apis );
+    $api_arr = $ffi->cast( 'opaque' => "enum[$num_apis]", $apis );
     free $apis;
-    return $api_arr;
+    $api_arr;
 }
 
 sub _get_port_name_5 {
@@ -210,7 +212,7 @@ sub _get_port_name_5 {
 
 sub _in_get_message {
     my ( $sub, $dev, $size ) = @_;
-    $size //= 1024;
+    $size //= BUFFER_SIZE;
     my $str = malloc $size;
     $sub->( $dev, $str, \$size );
     my $msg = buffer_to_scalar( $str, $size );
@@ -225,12 +227,12 @@ sub _out_send_message {
 }
 
 sub _in_set_callback {
-    my ( $sub, $dev, $cb, $data ) = @_;
+    my ( $sub, $dev, $cb ) = @_;
     my $callback = sub {
         my ( $timestamp, $inmsg, $size ) = @_;
         return if !$size;
         my $msg = buffer_to_scalar( $inmsg, $size );
-        $cb->( $timestamp, $msg, $data );
+        $cb->( $timestamp, $msg );
     };
     my $closure = $ffi->closure( $callback );
     $sub->( $dev, $closure );
@@ -255,7 +257,9 @@ sub callback_fh {
 WINDOWS:
 
     my ( $rd, $wr ) = IO::Socket->socketpair( AF_UNIX, SOCK_STREAM, PF_UNSPEC );
-    callback_fd( $dev, $wr->fileno );
+    if ( callback_fd( $dev, $wr->fileno ) < 0 ) {
+        croak("Error creating Win32 socket pair");
+    }
     $rd->blocking(0);
     $retain->{ $dev }->{ cb_writer } = $wr;
     return $rd;
@@ -263,6 +267,7 @@ WINDOWS:
 
 sub _cleanup {
     my ( $dev ) = @_;
+    return unless $dev;
     if ( $retain->{ $dev }->{ cb_writer } ) {
         $retain->{ $dev }->{ cb_writer }->close;
         delete $retain->{ $dev }->{ cb_writer };
@@ -279,18 +284,19 @@ __END__
 =head1 SYNOPSIS
 
     use MIDI::RtMidi::FFI ':all';
-    use MIDI::Event;
-    
+    use MIDI::Stream::Encoder;
+
     my $device = rtmidi_out_create( RTMIDI_API_UNIX_JACK, 'perl-jack' );
+    my $encoder = MIDI::Stream::Encoder->new;
     my $port_count = rtmidi_get_port_count( $device );
     my $synth_port = grep {
         rtmidi_get_port_name( $device, $_ ) =~ /synth/i
     } 0..($port_count-1);
-    
+
     rtmidi_open_port( $device, $synth_port, 'my synth' );
     rtmidi_out_send_message(
         $device,
-        ${ MIDI::Event::encode([[ note_on => 0, 0, 0x40, 0x5a ]], { never_add_eot => 1 }) }
+        $encoder->encode( [ note_on => 0, 0x40, 0x5a ] )
     );
 
 =head1 DESCRIPTION
@@ -334,13 +340,9 @@ Returns the best-guess of the version number of the RtMidi library in use.
 
 =head2 rtmidi_get_compiled_api
 
-    rtmidi_get_compiled_api( $return_apis );
-    rtmidi_get_compiled_api( 1 );
+    rtmidi_get_compiled_api();
 
-Returns available APIs.
-
-Pass a true value to return an array ref of available APIs as RT_API constants,
-otherwise a count of available APIs is returned.
+Returns an arrayref of available APIs.
 
 =head2 rtmidi_api_display_name
 
@@ -418,7 +420,7 @@ Return the RTMIDI_API constant for the given device.
 
 =head2 rtmidi_in_set_callback
 
-    rtmidi_in_set_callback( $device, $coderef, $data );
+    rtmidi_in_set_callback( $device, $coderef );
 
 Set a callback function to be invoked for incoming MIDI messages.
 

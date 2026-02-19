@@ -5,7 +5,6 @@ use base qw/ Exporter /;
 
 use MIDI::RtMidi::FFI::Device;
 use MIDI::RtMidi::FFI ':all';
-use MIDI::Event;
 use Proc::Find qw/ proc_exists /;
 use Test2::V0;
 
@@ -17,18 +16,21 @@ sub newdevice {
     my ( $type, $name ) = @_;
     $type //= 'out';
     $name //= "rtmidi-ffi-test-$type-$time";
-    MIDI::RtMidi::FFI::Device->new(
-        type => $type,
-        name => $name,
-        ignore_sysex => 0,
-        ignore_timing => 0,
-        ignore_sensing => 0,
-    );
+    $type eq 'out'
+        ? RtMidiOut->new( name => $name )
+        : RtMidiIn->new(
+            name => $name,
+            ignore_sysex => 0,
+            ignore_timing => 0,
+            ignore_sensing => 0
+          );
 }
 
 sub connect_devices {
     my ( $in, $out ) = @_;
-    my $port_name = "rtmidi-ffi-port-in-$time";
+    $in->close_port;
+    $out->close_port;
+    my $port_name = "rtmidi-ffi-port-in-" . sprintf( '%0.8x', rand() * 0xffffffff );
     $in->open_virtual_port( $port_name );
     $out->open_port_by_name( qr/$port_name/ );
 }

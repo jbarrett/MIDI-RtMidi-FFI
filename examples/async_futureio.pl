@@ -15,7 +15,7 @@ $midi_in->open_port_by_name( qr/sz|loop/i );
 
 async sub msg {
     my $fh = $midi_in->get_fh;
-    my $size = $midi_in->{ bufsize };
+    my $size = $midi_in->bufsize;
     while ( my $bytes = await Future::IO->read( $fh, $size ) ) {
         say unpack 'H*', $bytes;
     }

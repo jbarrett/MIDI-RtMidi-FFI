@@ -14,11 +14,12 @@ isa_ok( $_, 'MIDI::RtMidi::FFI::Device' ) for ( $in, $out );
 
 my @events = (
     [ note_on => 0x00, 0x40, 0x7f ],
+    [ note_on => 0x00, 0x41, 0x3f ],
     [ note_off => 0x01, 0x40, 0 ],
     [ pitch_wheel_change => 0x02, 0x1f40 ],
     [ control_change => 0x0f, 0x01, 0x5f ],
-    [ key_after_touch => 0x00, 0x40, 0x5f ],
-    [ sysex_f0 => "Hello, world!" ],
+    [ channel_after_touch => 0x00, 0x5f ],
+    [ sysex_f0 => [ 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21 ] ],
 );
 
 subtest event => sub {
@@ -30,7 +31,7 @@ subtest event => sub {
         $out->send_event( $event );
         usleep 1000;
         my $inevent = $in->get_event;
-        is( $event, $inevent, 'Event round-trip ok for ' . $event->[0] );
+        is( $inevent, $event, 'Event round-trip ok for ' . $event->[0] );
     }
 };
 

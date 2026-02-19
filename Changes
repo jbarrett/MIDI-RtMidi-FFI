@@ -1,5 +1,18 @@
 Revision history for perl module MIDI::RtMidi::FFI
 
+0.09 20XX
+
+  - Incompatible change: Minimum Perl version is now 5.26, with Feature::Compat::Class. This means any subclasses of Device will no longer work as expected. The API is otherwise largely compatible with previous versions.
+  - Incompatible change: Specifying $data in rtmidi callbacks is no longer supported.
+  - Incompatible change: Sending (N)RPNs has been updated - see docs for rpn() and nrpn() methods of the output device class.
+  - Refactoring: Input and Output devices are now separate classes - they may still be instantiated directly from the Device class with the 'type' constructor parameter. RtMidiIn and RtMidiOut operate as before.
+  - New method: RtMidiIn::get_fh() - returns a nonblocking IO::Handle which receives MIDI bytes as they arrive, for integration into event loops (see examples/async_*.pl). This is an alternative to librtmidi's own callback mechanism, which does not integrate cleanly with other event loops.
+  - MIDI messages are now encoded/decoded with MIDI::Stream. This is compatible with the previous MIDI::Event message handling by default.
+  - As part of migration to MIDI::Stream, 14-bit MIDI modes have been removed. The only supported mode is equivalent to the old 'await' mode. Supplying a 14 bit mode options to the constructor results in a deprecation warning, enables 14-bit CC handling, and otherwise has no effect.
+  - MIDI::Stream should handle concatenated and running messages more reliably than MIDI::Event, due to the hackish way the latter was integrated (this issue was not a shortcoming of MIDI::Event, just my code).
+  - get_compiled_api() now always returns an arrayref of available APIs (enums).
+  - Default buffer size for input devices is now 4096 bytes.
+
 0.08 2025-01-20
 
   - Method open_port_by_name now croaks if an error was detected

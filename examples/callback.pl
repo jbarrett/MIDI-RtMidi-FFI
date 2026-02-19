@@ -19,7 +19,7 @@ my $midi_rtn = IO::Async::Routine->new(
         $midi_in->open_port_by_name( qr/LKMK3|oxy/i );
 
         $midi_in->set_callback_decoded(
-            sub( $ts, $msg, $event, $data ) {
+            sub( $ts, $msg, $event ) {
                 $midi_ch->send( $event );
             }
         );

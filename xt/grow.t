@@ -3,7 +3,8 @@ use warnings;
 
 use Test2::V0;
 use Test::MemoryGrowth;
-use Test::Lib;
+use FindBin;
+use lib "$FindBin::Bin/../t/lib";
 use Time::HiRes qw/ usleep /;
 
 use MIDI::RtMidi::FFI::TestUtils;

@@ -20,7 +20,7 @@ subtest event => sub {
     $in->ignore_sysex( 0 );
     $out->send_message_encoded( sysex => 'Hello, World!' );
     usleep 200;
-    is( $in->get_message_decoded->[1], 'Hello, World!' );
+    is( $in->get_message_decoded->[1], [ 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21 ] );
 
     $in->ignore_sysex( 1 );
     $out->send_message_encoded( sysex => 'Hello, World!' );
