@@ -142,11 +142,21 @@ incoming events.
 
 =cut
 
+my $_munge_midi_event_name = method( $event ) {
+    return $event unless $remap_event_names;
+    $event->[0] = $self->name_to_midi_event( $event->[0] );
+    $event;
+};
+
 method set_callback_decoded( $cb ) {
-    $decoder->cancel_callbacks( 'all' );
-    $decoder->attach_callback->(
+    $decoder->cancel_event_callback( 'all' );
+    $decoder->attach_callback(
         all => sub( $event ) {
-            $cb->( $event->dt, $event->bytes, $event->as_arrayref );
+            $cb->(
+                $event->dt,
+                $event->bytes,
+                $self->$_munge_midi_event_name( $event->as_arrayref )
+            );
             $decoder->continue;
         }
     );
@@ -287,12 +297,6 @@ Alias for L</get_message_decoded>.
 Decodes the passed MIDI byte string with L<MIDI::Stream::Decoder>.
 
 =cut
-
-my $_munge_midi_event_name = method( $event ) {
-    return $event unless $remap_event_names;
-    $event->[0] = $self->name_to_midi_event( $event->[0] );
-    $event;
-};
 
 method decode_message( $msg ) {
     return unless $decoder->decode( $msg );
