@@ -12,6 +12,7 @@ Revision history for perl module MIDI::RtMidi::FFI
   - MIDI::Stream should handle concatenated and running messages more reliably than MIDI::Event, due to the hackish way the latter was integrated (this issue was not a shortcoming of MIDI::Event, just my code).
   - get_compiled_api() now always returns an arrayref of available APIs (enums).
   - Default buffer size for input devices is now 4096 bytes.
+  - Thanks to Gene Boggs (OLOGY) for testing help!
 
 0.08 2025-01-20
 
