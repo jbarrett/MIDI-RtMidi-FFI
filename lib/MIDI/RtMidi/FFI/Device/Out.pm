@@ -60,13 +60,14 @@ consecutive messages with the same status, after the first message in the set.
 =head2 send_message
 
     $device->send_message( $msg );
+    $device->send_message( $msg, $other_msg );
 
 Sends a message - MIDI bytes - on the device's open port.
 
 =cut
 
-method send_message( $msg ) {
-    rtmidi_out_send_message( $self->device, $msg );
+method send_message( @msg ) {
+    rtmidi_out_send_message( $self->device, $_ ) for @msg;
 }
 
 =head2 encode_message
@@ -85,7 +86,7 @@ my $_munge_midi_event_name = method( $event ) {
 
 method encode_message( @event ) {
     if ( ref $event[0] eq 'ARRAY' ) {
-        return join '', map { $self->encode_message( $_->@* ) } @event;
+        return map { $self->encode_message( $_->@* ) } @event;
     }
     $encoder->encode( $self->$_munge_midi_event_name( \@event ) );
 }
