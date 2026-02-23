@@ -12,6 +12,12 @@ use experimental qw/ signatures /;
 plan skip_all => "Sanity check failed" unless sanity_check;
 plan skip_all => 'Cannot open virtual ports on this platform' if no_virtual;
 
+# Do not like ... but if we send multiple messages, send calls clash with
+# callback calls, resulting in SEGV or even weirder crashes.
+# librtmidi on MacOS and Windows does not *readibly* allow concatenated
+# events, so here we are.
+plan skip_all => 'Concatenated msg support required' if $^O eq 'darwin' || $^O eq 'MSWin32';
+
 my $out = RtMidiOut->new;
 
 sub events {
@@ -29,7 +35,7 @@ sub events {
 };
 
 my @events = events;
-my $msg = $out->encode_message( \@events );
+my $msg = join '', $out->encode_message( \@events );
 
 subtest midi_event_callback => sub {
     my $in = RtMidiIn->new;
