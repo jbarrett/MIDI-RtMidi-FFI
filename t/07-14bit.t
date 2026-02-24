@@ -1,7 +1,6 @@
 use strict;
 use warnings;
 
-# Can I specify test count in Test2::V#?
 use Test2::V0;
 use Time::HiRes qw/ usleep gettimeofday tv_interval /;
 
