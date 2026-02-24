@@ -28,7 +28,7 @@ my @tests = (
     [ note_off => 0x1, 0x33, 0x00 ],
 );
 
-my $msg = $out->encode( \@tests );
+my @msg = $out->encode( \@tests );
 my $fh = $in->get_fh;
 
 my $decoder = MIDI::Stream::Decoder->new(
@@ -45,6 +45,6 @@ async sub test {
     }
 }
 
-$out->send_message( $msg );
+$out->send_message( @msg );
 Future->wait_any( Future::IO->sleep( 1 ), test() )->get;
 
