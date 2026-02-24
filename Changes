@@ -1,6 +1,6 @@
 Revision history for perl module MIDI::RtMidi::FFI
 
-0.09 2026-02-19
+0.09_001 2026-02-24
 
   - Incompatible change: Minimum Perl version is now 5.26, with Feature::Compat::Class. This means any subclasses of Device will no longer work as expected. The API is otherwise largely compatible with previous versions.
   - Incompatible change: Specifying $data in rtmidi callbacks is no longer supported.
