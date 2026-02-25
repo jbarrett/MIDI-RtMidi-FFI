@@ -4,16 +4,22 @@ use v5.36;
 
 use Mojo::IOLoop;
 use MIDI::RtMidi::FFI::Device;
+use MIDI::Stream::Decoder;
 
 my $midi_in = RtMidiIn->new();
-$midi_in->open_port_by_name( qr/sz|loop/i );
-
+$midi_in->open_port_by_name( qr/sz|lkmk3/i );
 my $fh = $midi_in->get_fh;
+
+my $decoder = MIDI::Stream::Decoder->new;
+$decoder->attach_callback( all => sub( $event ) {
+    say join ' ', $event->dt, $event->as_arrayref->@*
+} );
+
 my $stream = Mojo::IOLoop::Stream->new( $fh );
 $stream->timeout( 0 );
 $stream->on(
-    read => sub ( $stream, $bytes ) {
-        say unpack 'H*', $bytes;
+    read => sub ( $stream, $midi_bytes ) {
+        $decoder->decode( $midi_bytes );
     }
 );
 $stream->start;
