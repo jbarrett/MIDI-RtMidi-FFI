@@ -250,7 +250,7 @@ sub callback_fh {
     my ( $dev ) = @_;
     goto WINDOWS if $WINDOWS;
 
-    my $fh = IO::Handle->new->fdopen( callback_fd( $dev ), 'w' );
+    my $fh = IO::Handle->new->fdopen( callback_fd( $dev ), 'r' );
     $fh->blocking(0);
     return $fh;
 
