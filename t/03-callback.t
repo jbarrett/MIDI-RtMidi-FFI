@@ -38,7 +38,7 @@ my @events = events;
 my $msg = join '', $out->encode_message( \@events );
 
 subtest midi_event_callback => sub {
-    my $in = RtMidiIn->new;
+    my $in = RtMidiIn->new( retain_events => 0 );
     my @events = events;
     connect_devices( $in, $out );
     my @tests = map { [ $in->name_to_midi_event( shift @{ $_ } ), @{ $_ } ] } @events;

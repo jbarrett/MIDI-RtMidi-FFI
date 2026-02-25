@@ -19,8 +19,10 @@ field $ignore_timing  :param = 1;
 field $ignore_sensing :param = 1;
 
 field $enable_14bit_cc :param = 0;
-field $decoder :param = MIDI::Stream::Decoder->new(
-    enable_14bit_cc => $enable_14bit_cc
+field $retain_events :param = 1;
+field $decoder :param :reader = MIDI::Stream::Decoder->new(
+    enable_14bit_cc => $enable_14bit_cc,
+    retain_events => $retain_events,
 );
 
 field $queue_size_limit :param = MIDI::RtMidi::FFI::BUFFER_SIZE;
@@ -75,6 +77,19 @@ Ignore incoming active sensing messages. Default: true
 
 Enable decoding of MSB/LSB pairs for lower 32 CCs to 14-bit values. Default:
 false
+
+=head3 retain_events
+
+Retain decoded events. Calling L</decode> or L</get_message_decoded> will
+clear events from the queue as they are retrieved.
+
+If you intend to use callbacks to retrieve MIDI events or data, consider
+disabling this option to save memory. All pending events may be retrieved
+with:
+
+    my @events = $midiin->decoder->events();
+
+Default: true.
 
 =head3 queue_size_limit
 
